@@ -14,6 +14,10 @@ import java.util.concurrent.*;
  */
 public class Febs {
 
+    static {
+        init();
+    }
+
     private static boolean inited = false;
     private static ExecutorService executorService = null;
 
@@ -61,6 +65,10 @@ public class Febs {
      * 初始化
      */
     public static void init() {
+        if (inited) {
+            return;
+        }
+        inited = true;
         init(new ThreadPoolCfg());
     }
 
@@ -69,15 +77,14 @@ public class Febs {
      * @param threadPoolCfg 用于promise等的线程池配置
      */
     public static void init(ThreadPoolCfg threadPoolCfg) {
-        if (inited) {
-            return;
-        }
-        inited = true;
-
         _initThreadPool(threadPoolCfg);
     }
 
     private static void _initThreadPool(ThreadPoolCfg threadPoolCfg) {
+        if (null != executorService) {
+            executorService.shutdownNow();
+            executorService = null;
+        }
         executorService = new ThreadPoolExecutor(
                 threadPoolCfg.corePoolSize,
                 threadPoolCfg.maximumPoolSize,

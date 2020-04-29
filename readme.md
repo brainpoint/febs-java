@@ -1,3 +1,4 @@
+The common libraries.
 
 - [how to use](#how-to-use)
 - [Promise](#promise)
@@ -9,14 +10,14 @@
 ```js
 import cn.brainpoint.febs;
 
-// to init first.
+// can to init.
 Febs.init();
 ```
 
 
 ## Thread pool
 
-在初始化时传入对应的线程池参数, 进行线程池构造. 此后可以按如下方式使用线程池.
+可以在初始化时传入对应的线程池参数, 进行线程池构造. 此后可以按如下方式使用线程池.
 
 ```js
 try {

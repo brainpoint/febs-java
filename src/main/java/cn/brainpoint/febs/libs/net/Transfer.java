@@ -19,14 +19,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 网络请求工具
+ * The network transfer.
  */
 public final class Transfer {
 
     private static boolean inited = false;
 
     /**
-     * inital the transfer.
+     * Initial the transfer.
      */
     private static void init() {
         if (!Transfer.inited) {
@@ -36,9 +36,10 @@ public final class Transfer {
     }
 
     /**
-     * 向指定URL发送请求
-     *
-     * @return 所代表远程资源的响应结果
+     * Network request
+     * @param param the request parameter
+     * @return the network response
+     * @throws Exception cause in network io exception or ssl exception.
      */
     public static Response request(Request param)
     throws Exception

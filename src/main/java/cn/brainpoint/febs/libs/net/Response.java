@@ -10,15 +10,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URLConnection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
- * 响应结果
+ * The reponse result of network transfer.
  *
- * @Author pengxiang.li
- * @Date 2020/1/31 7:24 下午
+ * @author pengxiang.li
+ * <b>date</b> 2020/1/31 7:24 下午
  */
 public class Response {
 
@@ -48,6 +47,7 @@ public class Response {
     /**
      * Get the string content.
      * @return string content
+     * @throws IOException cause in network io error.
      */
     public String text() throws IOException {
         if (this._content != null) {
@@ -84,6 +84,7 @@ public class Response {
      * Warning: Must call bufferedReader.close() after read buffer.
      *
      * @return binary content
+     * @throws IOException cause in network io error.
      */
     public BufferedReader blob() throws IOException {
 

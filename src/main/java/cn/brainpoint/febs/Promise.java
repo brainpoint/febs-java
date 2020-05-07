@@ -6,32 +6,39 @@
 
 package cn.brainpoint.febs;
 
-import cn.brainpoint.febs.libs.promise.*;
-
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListSet;
 
+import cn.brainpoint.febs.libs.promise.IExecute;
+import cn.brainpoint.febs.libs.promise.IFinish;
+import cn.brainpoint.febs.libs.promise.IPromise;
+import cn.brainpoint.febs.libs.promise.IReject;
+import cn.brainpoint.febs.libs.promise.IRejectNoRet;
+import cn.brainpoint.febs.libs.promise.IResolve;
+import cn.brainpoint.febs.libs.promise.IResolveNoRet;
+
 
 /**
- * 可以使用模板的方式,指定第一次then的参数类型.
- * <p>
- * Example:
- * <p>
- * promiseObj
- * .then(...)
- * .then(...)
- * .fail(...)
- * .execute();
+ * The Promise utility.
  *
- * @Author pengxiang.li
- * @Date 2020/1/30 5:12 下午
+ * <i>e.g.</i>
+ * <code>
+ *  new Promise((resolve, reject)-&gt;{  resolve.execute();  })
+ *    .then(()-&gt;{})
+ *    .then(()-&gt;{})
+ *    .fail((e)-&gt;{})
+ *    .execute();
+ * </code>
+ *
+ * @author pengxiang.li
+ * <b>date</b> 2020/1/30 5:12 下午
  */
 public class Promise<TP> implements java.lang.Comparable, IPromise {
     static public final String STATUS_PENDING = "pending";
     static public final String STATUS_FULFILLED = "fulfilled";
     static public final String STATUS_REJECTED = "rejected";
-    static private ConcurrentSkipListSet<Object> globalObjectSet = new ConcurrentSkipListSet<>();
+    static private ConcurrentSkipListSet<Object> globalObjectSet = new ConcurrentSkipListSet<Object>();
     static private IReject globalUncaughtExceptionHandler;
 
     private Runnable onSuccessListenerRunnable;
@@ -45,7 +52,7 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
     private Promise<?> child;
     private String status = STATUS_PENDING;
     private Object tag;
-    private Promise ancestor;
+    private Promise<?> ancestor;
     private boolean _inExecute = false;
     private Object _inTag;
     private CompletableFuture _cf;
@@ -84,8 +91,13 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
     }
 
     /**
-     * 未设置fail的promise, 如果发生异常, 将由此处理异常.
-     * @param listener
+     * Some promise object will catch exception use this method, if it have't call .fail()
+     * <i>e.g.</i>
+     * <code>
+     *    Promise.setUncaughtExceptionHandler((e)-&gt;{  })
+     * </code>
+     *
+     * @param listener The uncaught exception handler.
      */
     public static void setUncaughtExceptionHandler(IReject listener) {
         globalUncaughtExceptionHandler = listener;
@@ -95,7 +107,7 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
      * Promise.all({})
      * .then(...)
      *
-     * @param list
+     * @param list Promise object set.
      * @return Promise
      */
     public static Promise all(Promise... list) {
@@ -105,7 +117,7 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
         }
 
         if (list != null && list.length > 0) {
-            Promise p = new Promise((resolve, reject)->{
+            Promise p = new Promise<Void>((resolve, reject)->{
                 resolve.execute(null);
             }).then(new Runnable() {
                 int completedCount = 0;
@@ -140,7 +152,7 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
             return p;
         } else {
             try {
-                Promise p = new Promise((Promise)null);
+                Promise p = new Promise<Object>((Promise)null);
                 p.resolve(new ArrayList<>());
                 return p;
             } catch (Exception e) {
@@ -150,19 +162,19 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
     }
 
     /**
-     * wait all promise done. will broke thread.
+     * Wait all promise done. will broke thread.
      *
-     * @param list
+     * @param list Promise object set.
      */
     public static void join(IPromise... list) {
         join(10, list);
     }
 
     /**
-     * wait all promise done. will broke thread.
+     * Wait all promise done. will broke thread.
      *
-     * @param list
-     * @param peekInMillisecond 查询结果的间隔.
+     * @param list Promise object set.
+     * @param peekInMillisecond peek interval.
      */
     public static void join(int peekInMillisecond, IPromise... list) {
         while (true) {
@@ -198,9 +210,9 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
     }
 
     /**
-     * 当前的状态.
+     * Get the current status of promise.
      *
-     * @return
+     * @return the status string
      */
     @Override
     public String getStatus() {
@@ -236,9 +248,10 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
     }
 
     /**
-     * new Promise((IResolve resolve, IReject reject)-> { resolve.execute(...); });
+     * Construct a promise.
+     * <code>new Promise((IResolve resolve, IReject reject)-&gt; { resolve.execute(...); });</code>
      *
-     * @param listener
+     * @param listener promise object.
      */
     public Promise(IExecute<TP> listener) {
         globalObjectSet.add(this);
@@ -247,6 +260,8 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
 
     /**
      * execute the promise.
+     *
+     * @return Promise interface
      */
     @Override
     public IPromise execute() {
@@ -383,7 +398,7 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
         onSuccessListenerRunnable = null;
         onSuccessListenerNoRet = null;
         onSuccessListener = listener;
-        child = new Promise(this.ancestor==null?this:this.ancestor);
+        child = new Promise<Object>(this.ancestor==null?this:this.ancestor);
         return child;
     }
 
@@ -398,21 +413,21 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
         onSuccessListenerRunnable = null;
         onSuccessListener = null;
         onSuccessListenerNoRet = listener;
-        child = new Promise(this.ancestor==null?this:this.ancestor);
+        child = new Promise<Object>(this.ancestor==null?this:this.ancestor);
         return child;
     }
 
     /**
      * Use runnable to executing asynchronous function. It cannot catch the return value of pre-chain.
      *
-     * @param runnable
-     * @return
+     * @param runnable the runnable object
+     * @return It returns a promise for satisfying next chain call.
      */
     public Promise then(Runnable runnable) {
         onSuccessListenerRunnable = runnable;
         onSuccessListener = null;
         onSuccessListenerNoRet = null;
-        child = new Promise(this.ancestor==null?this:this.ancestor);
+        child = new Promise<Object>(this.ancestor==null?this:this.ancestor);
         return child;
     }
 
@@ -420,13 +435,13 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
      * This function must call at the end of the `then()` chain, any `reject()` occurs in
      * previous async execution this function will be called.
      *
-     * @param listener
+     * @param listener the handler for this fail chain.
      * @return It returns a promise for satisfying next chain call.
      */
     public Promise fail(IReject listener) {
         onErrorListener = listener;
         onErrorListenerNoRet = null;
-        child = new Promise(this.ancestor==null?this:this.ancestor);
+        child = new Promise<Object>(this.ancestor==null?this:this.ancestor);
         return child;
     }
 
@@ -434,18 +449,21 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
      * This function must call at the end of the `then()` chain, any `reject()` occurs in
      * previous async execution this function will be called.
      *
-     * @param listener
+     * @param listener the handler for this fail chain.
      * @return It returns a promise for satisfying next chain call.
      */
     public Promise fail(IRejectNoRet listener) {
         onErrorListener = null;
         onErrorListenerNoRet = listener;
-        child = new Promise(this.ancestor==null?this:this.ancestor);
+        child = new Promise<Object>(this.ancestor==null?this:this.ancestor);
         return child;
     }
 
     /**
      * This function must call at the end of the `then()` or `fail()` chain.
+     *
+     * @param listener the handler for this finish chain.
+     * @return It returns a promise interface. You can call .execute() to activate this promise.
      */
     public IPromise finish(IFinish listener) {
         onFinishListener = listener;
@@ -459,6 +477,7 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
      * @param object your resultant value (any type of data you can pass as argument
      *               e.g. int, String, List, Map, any Java object)
      * @return This will return the resultant value you passed in the function call
+     * @throws Exception cause in common scene
      */
     private void resolve(Object object) throws Exception {
         // status = STATUS_FULFILLED;
@@ -471,6 +490,7 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
      *
      * @param object your error value (any type of data you can pass as argument
      *               e.g. int, String, List, Map, any Java object)
+     * @throws Exception cause in common scene
      */
     private void reject(Exception object) throws Exception {
         // status = STATUS_REJECTED;

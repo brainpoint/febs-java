@@ -9,10 +9,10 @@ package cn.brainpoint.febs.libs.net;
 import java.util.HashMap;
 
 /**
- * 请求参数
+ * The request parameter of network transfer.
  *
- * @Author pengxiang.li
- * @Date 2020/1/31 7:22 下午
+ * @author pengxiang.li
+ * <b>date</b> 2020/1/31 7:22 下午
  */
 public class Request {
     public String url;
@@ -21,7 +21,8 @@ public class Request {
     public HashMap<String, String> headers;
 
     /**
-     * 默认值 (5000)
+     * Connect and receive timeout.
+     * default in 5000ms.
      */
     public int timeout = 5000;
 
@@ -34,12 +35,14 @@ public class Request {
         this.method = null;
         this.headers = null;
     }
+
     public Request(String url, String body, String method, HashMap<String, String> headers) {
         this.url = url;
         this.body = body;
         this.method = method;
         this.headers = headers;
     }
+
     public Request(String url, String body, String method, HashMap<String, String> headers, int timeout) {
         this.timeout = timeout;
         this.url = url;

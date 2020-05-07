@@ -7,6 +7,7 @@
 package cn.brainpoint.febs;
 
 import com.sun.javafx.binding.StringFormatter;
+
 import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.contrib.java.lang.system.SystemErrRule;
@@ -14,7 +15,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 
 /**
  * @author pengxiang.li
- * @date 2020/1/31 8:04 下午
+ * <b>date</b> 2020/1/31 8:04 下午
  */
 public class Log {
     // 正确输出

@@ -7,21 +7,25 @@
 package cn.brainpoint.febs;
 
 /**
- * @Author pengxiang.li
- * @Date 2020/2/2 3:43 下午
+ * @author pengxiang.li
+ * <b>date</b> 2020/2/2 3:43 下午
  */
 public class Utils {
 
     /**
-     * @e.g.
-     *     febs.Utils.sleep(1000).then(()=>{
-     *          //1000ms之后resolve.
+     * Sleep in promise way.
+     * <i>e.g.</i>
+     * <code>
+     *     febs.Utils.sleep(1000).then(()-&gt;{
+     *          // Will call in 1000ms.
      *     });
-     * @param millisecond
-     * @return
+     * </code>
+     *
+     * @param millisecond sleep time.
+     * @return Promise object
      */
     public static Promise sleep(long millisecond) {
-        return new Promise((resolve, reject)->{
+        return new Promise<Void>((resolve, reject)->{
             try {
                 Thread.sleep(millisecond);
             }

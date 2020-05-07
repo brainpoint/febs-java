@@ -16,7 +16,8 @@ public class AllTrustManager implements X509TrustManager {
     /**
      * get ssl socket factory for connect.
      * e.g. ((HttpsURLConnection)connect).setSSLSocketFactory(ssf);
-     * @return
+     * @return socket factory.
+     * @throws Exception cause in ssl exception
      */
     static public SSLSocketFactory getSocketFactory() throws Exception {
         TrustManager[] tm = {new AllTrustManager()};

@@ -7,19 +7,21 @@
 package cn.brainpoint.febs.libs.promise;
 
 /**
- * @Author pengxiang.li
- * @Date 2020/2/1 9:15 下午
+ * @author pengxiang.li
+ * <b>date</b> 2020/2/1 9:15 下午
  */
 public interface IPromise {
     /**
      * execute the promise.
+     *
+     * @return promise interface.
      */
     IPromise execute();
 
     /**
-     * 当前的状态.
+     * The current status of Promise.
      *
-     * @return
+     * @return the string of status
      */
     String getStatus();
 

@@ -6,11 +6,16 @@
 
 package cn.brainpoint.febs;
 
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * @author pengxiang.li
- * @date 2020/1/30 5:12 下午
+ * <b>date</b> 2020/1/30 5:12 下午
  */
 public class Febs {
 
@@ -22,7 +27,7 @@ public class Febs {
     private static ExecutorService executorService = null;
 
     /**
-     * 用于promise等的线程池配置.
+     * This thread pool config will use in Promise.
      */
     public static class ThreadPoolCfg {
         public int corePoolSize = 2;
@@ -52,6 +57,24 @@ public class Febs {
     }
 
     /**
+     * Get a executor service.
+     * <i>e.g.</i>
+     * <code>
+         try {
+            Future&lt;Object&gt; future = Febs.getExecutorService.submit(()-&gt;{
+                                        // do anything in this thread...
+                                        return "any";
+                                    });
+             Object result = future.get();
+         } catch (ExecutionException e) {
+             e.printStackTrace();
+         } catch (InterruptedException e) {
+             e.printStackTrace();
+         } catch (Exception e) {
+             e.printStackTrace();
+         }
+     * </code>
+     *
      * @return get executorService.
      */
     public static ExecutorService getExecutorService() {
@@ -62,7 +85,7 @@ public class Febs {
     }
 
     /**
-     * 初始化
+     * Initial
      */
     public static void init() {
         if (inited) {
@@ -73,8 +96,8 @@ public class Febs {
     }
 
     /**
-     * 初始化
-     * @param threadPoolCfg 用于promise等的线程池配置
+     * Initial with thread pool config.
+     * @param threadPoolCfg thread pool config.
      */
     public static void init(ThreadPoolCfg threadPoolCfg) {
         _initThreadPool(threadPoolCfg);

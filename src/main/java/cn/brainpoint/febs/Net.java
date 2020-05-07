@@ -13,20 +13,28 @@ import cn.brainpoint.febs.libs.promise.IReject;
 import cn.brainpoint.febs.libs.promise.IResolve;
 
 /**
+ * The network utility.
+ *
  * @author pengxiang.li
- * @date 2020/1/30 8:55 下午
+ * <b>date</b> 2020/1/30 8:55 下午
  */
 public class Net {
 
+    /***
+     * The network transfer in fetch style.
+     *
+     * @param url request url.
+     * @return Promise object
+     */
     public static Promise<Response> fetch(String url) {
         return Net.fetch(new Request(url, null, "get", null));
     }
 
     /**
-     * 进行网络请求. 使用promise方式的异步操作.
+     * The network transfer in fetch style.
      *
-     * @param request
-     * @return
+     * @param request request parameter.
+     * @return Promise object
      */
     public static Promise<Response> fetch(Request request) {
         return new Promise<>(

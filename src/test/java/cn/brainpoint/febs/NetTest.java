@@ -6,23 +6,17 @@
 
 package cn.brainpoint.febs;
 
-import cn.brainpoint.febs.libs.net.Request;
-import cn.brainpoint.febs.libs.net.Response;
-import cn.brainpoint.febs.libs.promise.IReject;
-import cn.brainpoint.febs.libs.promise.IResolve;
-import org.junit.Test;
-
 import java.io.BufferedReader;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
+
+import org.junit.Test;
 
 /**
  * @author pengxiang.li
- * @date 2020/1/31 7:16 下午
+ * <b>date</b> 2020/1/31 7:16 下午
  */
 public class NetTest {
     @Test

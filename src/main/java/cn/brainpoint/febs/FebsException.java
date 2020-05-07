@@ -7,8 +7,8 @@
 package cn.brainpoint.febs;
 
 /**
- * @Author lipengxiang
- * @Date 2020/1/30 4:07 下午
+ * @author lipengxiang
+ * @date 2020/1/30 4:07 下午
  */
 public class FebsException extends java.lang.Exception {
 

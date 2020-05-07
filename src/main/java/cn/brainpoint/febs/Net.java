@@ -13,10 +13,14 @@ import cn.brainpoint.febs.libs.promise.IReject;
 import cn.brainpoint.febs.libs.promise.IResolve;
 
 /**
- * @Author pengxiang.li
- * @Date 2020/1/30 8:55 下午
+ * @author pengxiang.li
+ * @date 2020/1/30 8:55 下午
  */
 public class Net {
+
+    public static Promise<Response> fetch(String url) {
+        return Net.fetch(new Request(url, null, "get", null));
+    }
 
     /**
      * 进行网络请求. 使用promise方式的异步操作.
@@ -25,7 +29,7 @@ public class Net {
      * @return
      */
     public static Promise<Response> fetch(Request request) {
-        return new Promise<Response>(
+        return new Promise<>(
                 (IResolve<Response> resolve, IReject reject)->{
                     try {
                         Response resp = Transfer.request(request);

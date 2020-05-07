@@ -9,8 +9,8 @@ package cn.brainpoint.febs;
 import java.util.concurrent.*;
 
 /**
- * @Author pengxiang.li
- * @Date 2020/1/30 5:12 下午
+ * @author pengxiang.li
+ * @date 2020/1/30 5:12 下午
  */
 public class Febs {
 

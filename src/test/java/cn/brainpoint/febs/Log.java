@@ -13,8 +13,8 @@ import org.junit.contrib.java.lang.system.SystemErrRule;
 import org.junit.contrib.java.lang.system.SystemOutRule;
 
 /**
- * @Author pengxiang.li
- * @Date 2020/1/31 8:04 下午
+ * @author pengxiang.li
+ * @date 2020/1/31 8:04 下午
  */
 public class Log {
     // 正确输出

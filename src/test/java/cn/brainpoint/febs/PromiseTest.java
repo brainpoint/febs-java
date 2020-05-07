@@ -10,9 +10,12 @@ import cn.brainpoint.febs.libs.promise.IReject;
 import cn.brainpoint.febs.libs.promise.IResolve;
 import org.junit.Test;
 
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+
 /**
- * @Author pengxiang.li
- * @Date 2020/1/31 7:16 下午
+ * @author pengxiang.li
+ * @date 2020/1/31 7:16 下午
  */
 public class PromiseTest {
     // resolve.
@@ -20,7 +23,7 @@ public class PromiseTest {
         Promise promise = new Promise((IResolve resolve, IReject reject) -> {
             Log.out("begin %d %d", System.currentTimeMillis(), Thread.currentThread().getId());
             try {
-                Thread.sleep(2000);
+                Thread.sleep(1000);
             } catch (Exception e) {
             }
             resolve.execute(null);
@@ -55,13 +58,15 @@ public class PromiseTest {
     @Test
     public void testTimeoutAndThen() {
         Febs.init();
-        String tag = "promise then: ";
-        Log.out("");
+        String tag = "promise TimeoutAndThen: ";
+        Log.out("========================================");
         Log.out(tag + "begin");
         Promise promise = makePromiseTimeout();
         long now = System.currentTimeMillis();
 
         promise.then(res -> {
+            return Utils.sleep(1000);
+        }).then(res -> {
             Log.out(tag + "then");
             long ml = Math.abs(System.currentTimeMillis() - now - 2000);
             Log.out(tag + " ms diff: %d", ml);
@@ -94,6 +99,7 @@ public class PromiseTest {
             } else {
                 Log.out(tag + "finish");
             }
+            Log.out(tag+"dump: "+Promise._dumpDebug());
         }).execute();
 
         Promise.join(promise);
@@ -106,7 +112,7 @@ public class PromiseTest {
     public void testFail() {
         Febs.init();
         String tag = "promise Fail: ";
-        Log.out("");
+        Log.out("========================================");
         Log.out(tag + "begin");
         Promise promise = makePromiseReject();
 
@@ -142,6 +148,7 @@ public class PromiseTest {
             } else {
                 Log.err(tag + "finish");
             }
+            Log.out(tag+"dump: "+Promise._dumpDebug());
             promise.setTag(3);
         }).execute();
 
@@ -160,7 +167,7 @@ public class PromiseTest {
     public void testTemplate() {
         Febs.init();
         String tag = "promise Template: ";
-        Log.out("");
+        Log.out("========================================");
         Log.out(tag + "begin");
         Promise<Integer> promise = makePromiseTemplate2();
 
@@ -184,9 +191,9 @@ public class PromiseTest {
             } else {
                 Log.out(tag + " 2");
             }
-            return null;
         }).finish(() -> {
             Log.out(tag + "finish 2");
+            Log.out(tag+"dump: "+Promise._dumpDebug());
         }).execute();
 
         Promise.join(promise);
@@ -197,9 +204,9 @@ public class PromiseTest {
      */
     @Test
     public void testException() {
-        Febs.init();
+        Febs.init(new Febs.ThreadPoolCfg(2, 4, 20000, new ArrayBlockingQueue<>(20), new ThreadPoolExecutor.AbortPolicy()));
         String tag = "promise Exception: ";
-        Log.out("");
+        Log.out("========================================");
         Log.out(tag + "begin");
 
         Promise.setUncaughtExceptionHandler(e->{

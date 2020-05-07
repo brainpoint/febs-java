@@ -11,7 +11,6 @@ import cn.brainpoint.febs.libs.promise.*;
 import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.Future;
 
 
 /**
@@ -35,9 +34,12 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
     static private ConcurrentSkipListSet<Object> globalObjectSet = new ConcurrentSkipListSet<>();
     static private IReject globalUncaughtExceptionHandler;
 
-    private Runnable onSuccessListener2;
+    private Runnable onSuccessListenerRunnable;
     private IResolve<TP> onSuccessListener;
+    private IResolveNoRet<TP> onSuccessListenerNoRet;
     private IReject onErrorListener;
+    private IRejectNoRet onErrorListenerNoRet;
+
     private IFinish onFinishListener;
     private IExecute<TP> onExecuteListener;
     private Promise<?> child;
@@ -75,6 +77,10 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
         public void setTag(Object tag) {
             this.p.setTag(tag);
         }
+    }
+
+    public static String _dumpDebug() {
+        return "globalObjectSet: " + globalObjectSet.size();
     }
 
     /**
@@ -308,6 +314,64 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
         return this;
     }
 
+    private IPromise _executeInSync() {
+        Promise ancestor = this.ancestor == null ? this : this.ancestor;
+
+        if (!ancestor.status.equals(STATUS_PENDING) || ancestor._inExecute == true) {
+            throw new RuntimeException("Promise is not in pending status");
+        } else {
+            ancestor._inExecute = true;
+            Exception ee = null;
+
+            try {
+                ancestor.onExecuteListener.execute(res -> {
+                    ancestor.resolve(res);
+                    return null;
+                }, e -> {
+                    ancestor.reject(e);
+                    return null;
+                });
+            } catch (Exception e) {
+                ee = e;
+            } finally {
+                globalObjectSet.remove(ancestor);
+                if (ee != null) {
+                    try {
+                        ancestor.reject((Exception) ee);
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex);
+                    } finally {
+                        // release memory
+                        Promise p = ancestor;
+                        p.status = STATUS_REJECTED;
+                        do {
+                            p._cf = null;
+                            Promise p1 = p.child;
+                            p.child = null;
+                            p = p1;
+                        } while (p != null);
+                    }
+                }
+                // 获取最终的结果.
+                else {
+                    Promise p = ancestor;
+                    if (p.getStatus() == STATUS_PENDING) {
+                        p.status = STATUS_FULFILLED;
+                    }
+                    do {
+                        p._cf = null;
+                        Promise p1 = p.child;
+                        p.child = null;
+                        p = p1;
+                    } while (p != null);
+                }
+            }
+        }
+
+        return this;
+    }
+
+
     /**
      * After executing asynchronous function the result will be available in the success listener
      * as argument.
@@ -316,21 +380,38 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
      * @return It returns a promise for satisfying next chain call.
      */
     public Promise then(IResolve<TP> listener) {
-        onSuccessListener2 = null;
+        onSuccessListenerRunnable = null;
+        onSuccessListenerNoRet = null;
         onSuccessListener = listener;
         child = new Promise(this.ancestor==null?this:this.ancestor);
         return child;
     }
 
     /**
-     * Use runable to executing asynchronous function. It cann't catch the return value of pre-chain.
+     * After executing asynchronous function the result will be available in the success listener
+     * as argument.
+     *
+     * @param listener IResolve
+     * @return It returns a promise for satisfying next chain call.
+     */
+    public Promise then(IResolveNoRet<TP> listener) {
+        onSuccessListenerRunnable = null;
+        onSuccessListener = null;
+        onSuccessListenerNoRet = listener;
+        child = new Promise(this.ancestor==null?this:this.ancestor);
+        return child;
+    }
+
+    /**
+     * Use runnable to executing asynchronous function. It cannot catch the return value of pre-chain.
      *
      * @param runnable
      * @return
      */
     public Promise then(Runnable runnable) {
-        onSuccessListener2 = runnable;
+        onSuccessListenerRunnable = runnable;
         onSuccessListener = null;
+        onSuccessListenerNoRet = null;
         child = new Promise(this.ancestor==null?this:this.ancestor);
         return child;
     }
@@ -344,6 +425,21 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
      */
     public Promise fail(IReject listener) {
         onErrorListener = listener;
+        onErrorListenerNoRet = null;
+        child = new Promise(this.ancestor==null?this:this.ancestor);
+        return child;
+    }
+
+    /**
+     * This function must call at the end of the `then()` chain, any `reject()` occurs in
+     * previous async execution this function will be called.
+     *
+     * @param listener
+     * @return It returns a promise for satisfying next chain call.
+     */
+    public Promise fail(IRejectNoRet listener) {
+        onErrorListener = null;
+        onErrorListenerNoRet = listener;
         child = new Promise(this.ancestor==null?this:this.ancestor);
         return child;
     }
@@ -386,12 +482,18 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
             if (onSuccessListener != null) {
                 Object res = onSuccessListener.execute((TP) param);
                 _handleSuccessAsyncAccept(res);
-            } else if (onSuccessListener2 != null) {
-                onSuccessListener2.run();
+            } else if (onSuccessListenerNoRet != null) {
+                onSuccessListenerNoRet.execute((TP) param);
+                _handleSuccessAsyncAccept(null);
+            } else if (onSuccessListenerRunnable != null) {
+                onSuccessListenerRunnable.run();
                 _handleSuccessAsyncAccept(null);
             } else if (child != null) {
                 child._handleSuccessAsyncRun(param);
             } else if (onFinishListener != null) {
+                // Promise ancestor = this.ancestor == null ? this : this.ancestor;
+                // globalObjectSet.remove(ancestor);
+
                 onFinishListener.execute();
             }
             return null;
@@ -401,6 +503,7 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
     }
 
     private void _handleSuccessAsyncAccept(Object res) throws RuntimeException {
+
         if (res != null) {
             if (res instanceof Promise) {
                 if (child != null) {
@@ -410,6 +513,10 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
                         pChild = pChild.child;
                     }
 
+                    Promise ancestor = p.ancestor == null ? p : p.ancestor;
+                    globalObjectSet.remove(ancestor);
+                    p.ancestor = this.ancestor;
+
                     Promise oldP = child;
                     child = p;
                     pChild.child = oldP;
@@ -418,7 +525,7 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
                 }
 
                 try {
-                    child.resolve(res);
+                    child._executeInSync();
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -450,10 +557,15 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
     }
 
     private void handleError(java.lang.Exception object) throws Exception {
-        if (onErrorListener != null) {
+        if (onErrorListener != null || onErrorListenerNoRet != null) {
             Object res = null;
             try {
-                res = onErrorListener.execute(object);
+                if (onErrorListener != null) {
+                    res = onErrorListener.execute(object);
+                }
+                else {
+                    onErrorListenerNoRet.execute(object);
+                }
             } catch (Exception e) {
                 if (child != null) {
                     child.reject(object);

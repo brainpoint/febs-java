@@ -22,7 +22,14 @@ public class Utils {
      */
     public static Promise sleep(long millisecond) {
         return new Promise((resolve, reject)->{
-            Thread.sleep(millisecond);
+            try {
+                Thread.sleep(millisecond);
+            }
+            catch (Exception e) {
+                reject.execute(e);
+                return;
+            }
+            resolve.execute(null);
         });
     }
 

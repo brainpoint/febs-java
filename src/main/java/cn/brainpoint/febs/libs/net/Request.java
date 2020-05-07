@@ -28,6 +28,18 @@ public class Request {
     public Request() {
     }
 
+    public Request(String url) {
+        this.url = url;
+        this.body = null;
+        this.method = null;
+        this.headers = null;
+    }
+    public Request(String url, String body, String method, HashMap<String, String> headers) {
+        this.url = url;
+        this.body = body;
+        this.method = method;
+        this.headers = headers;
+    }
     public Request(String url, String body, String method, HashMap<String, String> headers, int timeout) {
         this.timeout = timeout;
         this.url = url;

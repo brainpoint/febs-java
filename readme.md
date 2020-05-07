@@ -1,20 +1,52 @@
-The common libraries in stream function.
 
-- [how to use](#how-to-use)
-- [Thread pool](#thread-pool)
-- [Promise](#promise)
-- [Net](#net)
+# Febs
+
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/cn.brainpoint/febs/badge.svg)](https://maven-badges.herokuapp.com/maven-central/cn.brainpoint/febs/)
+[![License](https://img.shields.io/github/license/brainpoint/febs-java)](https://opensource.org/licenses/MIT)
+
+Febs is a common libraries in stream function. Most api is like javascript.
+
+- [How to use](#how-to-use)
+- [Asynchronous in ThreadPool](#Asynchronous-in-ThreadPool)
+- [Asynchronous in Promise](#Asynchronous-in-Promise)
+- [Network transfer in Fetch](#Network-transfer-in-Fetch)
 
 ## How to use
+
+maven config.
+
+```html
+<dependency>
+    <groupId>cn.brainpoint</groupId>
+    <artifactId>febs</artifactId>
+    <version>0.0.1</version>
+</dependency>
+```
+
 
 ```js
 import cn.brainpoint.febs;
 
-Net.fetch(...)
+Net.fetch("https://xxx")
+    // get response status code.
+    .then(res->{
+        // code.
+        System.out.print(res.statusCode);
+        // message.
+        System.out.print(res.statusMsg);
+        
+        // get text content.
+        return res.text();
+    })
+    .then(content->{
+
+    });
 ```
 
 
 ### config
+
+It can initial with thread pool config. Thread pool will affect performance of promise.
 
 ```js
 // Initial with thread pool config.
@@ -27,14 +59,15 @@ Febs.init(new Febs.ThreadPoolCfg(
          );
 ```
 
-## Thread pool
+## Asynchronous in ThreadPool
 
-可以在初始化时传入对应的线程池参数, 进行线程池构造. 此后可以按如下方式使用线程池.
+Use `getExecutorService` api to get a asynchronous work item.
 
 ```js
 try {
     Future<Object> future 
                     = Febs.getExecutorService.submit(()->{
+                        // do anything in this thread.
                         return "any";
                     });
     Object result = future.get();
@@ -47,40 +80,51 @@ try {
 }
 ```
 
-## Promise
+## Asynchronous in Promise
 
-与js es6中promise一样的使用方式. 内部使用了线程池, 使用异步操作进行效率.
+Febs promise like javascript promise api, use chain list way to do asynchronous work.
 
-- `.then` 或 `.fail` 语句块中可以不返回数据或返回任意类型的对象, 返回的内容将被下一个链条捕获为参数.
+- `.then`: same as js-es6 promise`.then` chain.
+- `.fail`: same as js-es6 promise`.catch` chain.
+- `.finish`: same as js promise`.finally` chain.
+- `.execute`: It must be call to activate promise in Febs promise.
+
+### Base scene
 
 ```js
 /**
- * 创建promise对象.
+ * Make a promise object.
  */
 Promise promise = new Promise((IResolve resolve, IReject reject)-> { 
-                                resolve.execute(...); 
+
+                                // call this set status to 'fulfilled'
+                                resolve.execute(retVal); 
+
+                                // call this set status to 'rejected'
+                                reject.execute(new Exception(""));
                             });
 
 /**
- * 使用; then/fail 操作必须返回一个值
- * 在所有的链完成后, 调用execute执行promise.
+ * chain.
  */
 promise.then(res->{  })
+       .then(()->{ return 1; })
+       .then(res1->{  })
        .fail(e->{  })  // same as javascript catch()
        .finish(()->{}) // same as javascript finally()
-       .execute();  // execute promise.
+       .execute();  // activate promise.
 
 /**
- * 触发异步操作后, 如果当前线程会销毁, 则需join等待.
+ * Block until promise finish, if you want to wait.
  */
 Promise.join(promise);
 ```
 
-### return promise.
+### return another promise object in chain.
 
 ```js
 promise.then(res->{
-            // this nest promise cannot to call execute().
+            // this nest promise cannot call execute().
             return new Promise((resolve, reject)->{
                 ...
             });
@@ -90,49 +134,47 @@ promise.then(res->{
 ```
 
 ### all
+
 ```js
 /**
- * 创建promise数组.
+ * Promise object array.
  */
 Promise[] promiseArr = {...};
 
 /**
- * 执行.
+ * execute all promise object.
  */
 Promise promise = Promise.all(promiseArr)
        .then(res->{
+            // all promise done.
+        })
+        .fail(e->{
+            // if some promise rejected.
         })
        .execute();
-
-/**
- * 触发异步操作后, 如果当前线程会销毁, 则需join等待.
- */
-Promise.join(promise);
 ```
 
 ### join
 
-promise创建之后, 会自动在全局保存一份实例直到异步完成. 但是如果需要手动等待异步完成, 可以调用join接口.
+It will store promise object in global until promise finish, after promise object is created. We can call Promise.join to wait promise finish.
 
 ```js
-Promise.join(promise);
+Promise.join(promiseObj);
 ```
 
 ### template
 
-可以使用模板的方式,指定第一次then的参数类型
+The `then` and `fail` chain can return a object to next chain. The data type of return value is unkonw, we can use template to spacify a data type.
+
+e.g.
 
 ```js
-/**
- * 创建promise对象.
- */
+// Spacify a data type.
 Promise<Integer> promise = new Promise<Integer>((IResolve<Integer> resolve, IReject reject)-> { 
                                 resolve.execute(2); 
                             });
 
-/**
- * 第一个then的参数类型为指定的模板类型.
- */
+// use the data type.
 promise.then((Integer res)->{ 
             // ...
         })
@@ -141,7 +183,7 @@ promise.then((Integer res)->{
 
 ### Uncaught Exception Handler
 
-未设置fail的promise, 如果发生异常, 将由此处理异常.
+Some promise object will catch exception use this method, if it have't call `.fail()`
 
 ```js
 Promise.setUncaughtExceptionHandler(e->{
@@ -149,13 +191,15 @@ Promise.setUncaughtExceptionHandler(e->{
 });
 ```
 
-## Net
+## Network transfer in Fetch
 
-使用fetch的方式进行网络请求
+The network transfer in fetch style
 
 ### Get text content.
 
 ```js
+import cn.brainpoint.febs;
+
 Net.fetch("https://xxxx")
         // get text content.
         .then(res->{ return res.text(); })
@@ -173,6 +217,8 @@ Net.fetch("https://xxxx")
 ### Get binary content.
 
 ```js
+import cn.brainpoint.febs;
+
 Net.fetch("https://xxxx")
         // get blob content.
         .then(res->{ return res.blob(); })
@@ -196,10 +242,14 @@ Net.fetch("https://xxxx")
         .execute();
 ```
 
+> IMPORTANT: close BufferedReader.
+
 
 ### Get response headers.
 
 ```js
+import cn.brainpoint.febs;
+
 Net.fetch("https://xxxx")
         // get response status code.
         .then(res->{
@@ -226,4 +276,20 @@ Net.fetch("https://xxxx")
             System.err.print(e.getMessage());
         })
         .execute();
+```
+
+### Set request parameter 
+
+```js
+import cn.brainpoint.febs;
+
+Net.fetch(new Requset(
+                    url,
+                    body,
+                    method,
+                    headers,
+                    timeout,
+                ))
+        // get blob content.
+        .then(res->{ return res.blob(); })
 ```

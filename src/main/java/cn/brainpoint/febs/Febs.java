@@ -6,12 +6,7 @@
 
 package cn.brainpoint.febs;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * @author pengxiang.li
@@ -36,7 +31,7 @@ public class Febs {
          * in millisecond.
          */
         public int keepAliveTime = 20000;
-        public BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<>(20);
+        public BlockingQueue<Runnable> workQueue = new LinkedBlockingQueue<>();
         public RejectedExecutionHandler handler = new ThreadPoolExecutor.AbortPolicy();
 
         public ThreadPoolCfg() {

@@ -12,6 +12,10 @@ package cn.brainpoint.febs;
  */
 public class Utils {
 
+    static {
+        Febs.init();
+    }
+
     /**
      * Sleep in promise way.
      * <i>e.g.</i>

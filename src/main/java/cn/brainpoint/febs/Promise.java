@@ -7,8 +7,12 @@
 package cn.brainpoint.febs;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import cn.brainpoint.febs.libs.promise.IExecute;
 import cn.brainpoint.febs.libs.promise.IFinish;
@@ -35,6 +39,11 @@ import cn.brainpoint.febs.libs.promise.IResolveNoRet;
  * <b>date</b> 2020/1/30 5:12 下午
  */
 public class Promise<TP> implements java.lang.Comparable, IPromise {
+
+    static {
+        Febs.init();
+    }
+
     static public final String STATUS_PENDING = "pending";
     static public final String STATUS_FULFILLED = "fulfilled";
     static public final String STATUS_REJECTED = "rejected";
@@ -54,7 +63,7 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
     private Object tag;
     private Promise<?> ancestor;
     private boolean _inExecute = false;
-    private Object _inTag;
+    private Object _inTag;  // internal use.
     private CompletableFuture _cf;
 
     private static class PromiseExecutor<TP> implements IPromise {
@@ -63,6 +72,9 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
         public PromiseExecutor(Promise<TP> p) {
             this.p = p;
         }
+
+        @Override
+        public boolean isExecutor() { return true; }
 
         @Override
         public IPromise execute() {
@@ -107,46 +119,63 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
      * Promise.all({})
      * .then(...)
      *
+     * !Warning: All promise object cannot call execute() function.
+     *
      * @param list Promise object set.
      * @return Promise
      */
-    public static Promise all(Promise... list) {
+    public static Promise all(List<IPromise> list) {
 
-        if (list == null || list.length <= 0) {
+        if (list == null) {
             throw new RuntimeException("Promise list should not be empty!");
         }
 
-        if (list != null && list.length > 0) {
-            Promise p = new Promise<Void>((resolve, reject)->{
-                resolve.execute(null);
-            }).then(new Runnable() {
-                int completedCount = 0;
-                Object[] result = new Object[list.length];
-                Exception ex;
+        if (list.size() > 0) {
+            Promise p = new Promise((resolve, reject)->{
 
-                @Override
-                public void run() {
-                    for (int i = 0; i < list.length; i++) {
-                        Promise promise = list[i];
-                        promise._inTag = i;
-                        promise.then(res -> {
-                            result[(int) promise._inTag] = res;
-                            completed(null);
-                            return res;
-                        }).fail(this::completed);
+                AtomicReference<Exception> ex = new AtomicReference<>(null);
+                AtomicInteger completedCount = new AtomicInteger(0);
+                Object[] result = new Object[list.size()];
+
+                for (int i = 0; i < list.size(); i++) {
+                    if (ex.get() != null) {
+                        reject.execute(ex.get());
+                        return;
                     }
-                    Promise.join(5, list);
-                    if (ex != null) {
-                        throw new RuntimeException(ex);
+
+                    Promise promise;
+                    if (list.get(i).isExecutor()) {
+                        promise = ((PromiseExecutor)list.get(i)).p;
                     }
+                    else {
+                        promise = (Promise)list.get(i);
+                    }
+
+                    // can call execute
+                    Promise ancestor = promise.ancestor == null ? promise : promise.ancestor;
+                    if (!ancestor.status.equals(STATUS_PENDING) || ancestor._inExecute == true) {
+                        reject.execute(new RuntimeException("Promise is not in pending status"));
+                        return;
+                    }
+
+                    promise._inTag = i;
+                    promise.then(res -> {
+                        result[(int) promise._inTag] = res;
+                        completedCount.getAndIncrement();
+                    }).fail(e->{
+                        ex.set(e);
+                    }).execute();
+
+                    join(promise);
                 }
 
-                private Object completed(Exception err) throws Exception {
-                    completedCount++;
-                    if (err != null) {
-                        ex = err;
-                    }
-                    return null;
+                if (ex.get() != null) {
+                    reject.execute(ex.get());
+                    return;
+                }
+                if (completedCount.get() == result.length) {
+                    resolve.execute(result);
+                    return;
                 }
             });
             return p;
@@ -162,6 +191,24 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
     }
 
     /**
+     * Promise.all({})
+     * .then(...)
+     *
+     * !Warning: All promise object cannot call execute() function.
+     *
+     * @param list Promise object set.
+     * @return Promise
+     */
+    public static Promise all(IPromise... list) {
+
+        if (list == null || list.length <= 0) {
+            throw new RuntimeException("Promise list should not be empty!");
+        }
+
+        return all(Arrays.asList(list));
+    }
+
+    /**
      * Wait all promise done. will broke thread.
      *
      * @param list Promise object set.
@@ -174,31 +221,59 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
      * Wait all promise done. will broke thread.
      *
      * @param list Promise object set.
+     */
+    public static void join(List<IPromise> list) {
+        join(10, list);
+    }
+
+    /**
+     * Wait all promise done. will broke thread.
+     *
+     * @param list Promise object set.
      * @param peekInMillisecond peek interval.
      */
     public static void join(int peekInMillisecond, IPromise... list) {
+        if (list.length == 0) {
+            return;
+        }
+
+        join(peekInMillisecond, Arrays.asList(list));
+    }
+
+    /**
+     * Wait all promise done. will broke thread.
+     *
+     * @param list Promise object set.
+     * @param peekInMillisecond peek interval.
+     */
+    public static void join(int peekInMillisecond, List<IPromise> list) {
+        if (list == null || list.isEmpty()) {
+            return;
+        }
+
         while (true) {
             int doneCount = 0;
-            for (int i = 0; i < list.length; i++) {
-                if (list[i].getStatus() != STATUS_PENDING) {
+            for (int i = 0; i < list.size(); i++) {
+                IPromise p1 = list.get(i);
+                if (p1.getStatus() != STATUS_PENDING) {
                     doneCount++;
                 }
-                else if (list[i] instanceof PromiseExecutor) {
-                    PromiseExecutor pe = (PromiseExecutor)list[i];
+                else if (p1 instanceof PromiseExecutor) {
+                    PromiseExecutor pe = (PromiseExecutor)p1;
                     Promise p = pe.p;
                     p = p.ancestor == null? p: p.ancestor;
                     if (!p._inExecute) {
                         p.execute();
                     }
                 } else {
-                    Promise p = (Promise)list[i];
+                    Promise p = (Promise)p1;
                     p = p.ancestor == null? p: p.ancestor;
                     if (!p._inExecute) {
                         p.execute();
                     }
                 }
             }
-            if (doneCount == list.length) {
+            if (doneCount == list.size()) {
                 return;
             }
             try {
@@ -208,6 +283,9 @@ public class Promise<TP> implements java.lang.Comparable, IPromise {
             }
         }
     }
+
+    @Override
+    public boolean isExecutor() { return false; }
 
     /**
      * Get the current status of promise.

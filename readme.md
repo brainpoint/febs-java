@@ -54,7 +54,7 @@ Febs.init(new Febs.ThreadPoolCfg(
                         2, 
                         4, 
                         20000, 
-                        new ArrayBlockingQueue<>(20),
+                        new LinkedBlockingQueue<>(),
                         new ThreadPoolExecutor.AbortPolicy())
          );
 ```
@@ -138,6 +138,7 @@ promise.then(res->{
 ```js
 /**
  * Promise object array.
+ * !Warning: All promise object cannot call execute() funciton.
  */
 Promise[] promiseArr = {...};
 
@@ -159,6 +160,7 @@ Promise promise = Promise.all(promiseArr)
 It will store promise object in global until promise finish, after promise object is created. We can call Promise.join to wait promise finish.
 
 ```js
+IPromise promiseObj = new Promise((resolve, reject)->{ resolve.execute(); });
 Promise.join(promiseObj);
 ```
 

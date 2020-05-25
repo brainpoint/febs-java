@@ -20,6 +20,10 @@ import cn.brainpoint.febs.libs.promise.IResolve;
  */
 public class Net {
 
+    static {
+        Febs.init();
+    }
+
     /***
      * The network transfer in fetch style.
      *

@@ -7,11 +7,10 @@
 package cn.brainpoint.febs;
 
 import java.io.BufferedReader;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.lang.reflect.Array;
+import java.util.*;
 
+import cn.brainpoint.febs.libs.promise.IPromise;
 import org.junit.Test;
 
 /**
@@ -21,45 +20,54 @@ import org.junit.Test;
 public class NetTest {
     @Test
     public void testText() {
-        Febs.init();
-
         String tag = "Net text: ";
         Log.out("========================================");
         Log.out(tag + "begin");
 
-        Net.fetch("https://www.baidu.com")
-                .then(res->{
-                    // code.
-                    Log.out(tag+res.statusCode + " " + res.statusMsg);
+        ArrayList<IPromise> all = new ArrayList();
 
-                    // headers.
-                    Set<String> keySet = res.headers.keySet();
-                    Iterator<String> it1 = keySet.iterator();
-                    while(it1.hasNext()){
-                        String ID = it1.next();
-                        Log.out(tag+"header: " + ID);
-                        List<String> el = res.headers.get(ID);
-                        Log.out(tag+el);
-                    }
+        for (int i = 0; i < 100; i++) {// code.
+            Log.out(tag + " " + i);
+            IPromise p = Net.fetch("https://www.baidu.com")
+                    .then(res -> {
+                        // code.
+                        Log.out(tag + res.statusCode + " " + res.statusMsg);
 
-                    return res.text();
-                })
-                .then(res->{
-                    Log.out(tag+res);
-                })
-                .fail((e)->{
-                    Log.err(tag+e.getMessage());
-                })
-                .finish(()->{
-                    Log.out(tag+"dump: "+Promise._dumpDebug());
-                })
-                .execute();
+                        // headers.
+                        Set<String> keySet = res.headers.keySet();
+                        Iterator<String> it1 = keySet.iterator();
+                        while (it1.hasNext()) {
+                            String ID = it1.next();
+                            Log.out(tag + "header: " + ID);
+                            List<String> el = res.headers.get(ID);
+                            Log.out(tag + el);
+                        }
+
+                        return res.text();
+                    })
+                    .then(res -> {
+                        Log.out(tag + res);
+                    })
+                    .fail((e) -> {
+                        e.printStackTrace(System.err);
+                        Log.err(tag + e.getMessage());
+                    })
+                    .finish(() -> {
+                        Log.out(tag + "dump: " + Promise._dumpDebug());
+                    });
+
+            all.add(p);
+        }
+
+        Promise.join(Promise.all(all).then(()->{
+            Log.out(tag + " finish");
+        }).fail(e->{
+            e.printStackTrace();
+        }));
     }
 
 //    @Test
     public void testBlob() {
-        Febs.init();
-
         String tag = "Net Blob: ";
         Log.out("========================================");
         Log.out(tag + "begin");

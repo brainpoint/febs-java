@@ -27,4 +27,6 @@ public interface IPromise {
 
     Object getTag();
     void setTag(Object tag);
+
+    boolean isExecutor();
 }

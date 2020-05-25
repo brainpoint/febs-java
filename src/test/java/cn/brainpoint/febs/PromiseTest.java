@@ -58,7 +58,6 @@ public class PromiseTest {
      */
     @Test
     public void testTimeoutAndThen() {
-        Febs.init();
         String tag = "promise TimeoutAndThen: ";
         Log.out("========================================");
         Log.out(tag + "begin");
@@ -111,7 +110,6 @@ public class PromiseTest {
      */
     @Test
     public void testFail() {
-        Febs.init();
         String tag = "promise Fail: ";
         Log.out("========================================");
         Log.out(tag + "begin");
@@ -166,7 +164,6 @@ public class PromiseTest {
      */
     @Test
     public void testTemplate() {
-        Febs.init();
         String tag = "promise Template: ";
         Log.out("========================================");
         Log.out(tag + "begin");
@@ -205,7 +202,7 @@ public class PromiseTest {
      */
     @Test
     public void testException() {
-        Febs.init(new Febs.ThreadPoolCfg(2, 4, 20000, new ArrayBlockingQueue<>(20), new ThreadPoolExecutor.AbortPolicy()));
+//        Febs.init(new Febs.ThreadPoolCfg(2, 4, 20000, new ArrayBlockingQueue<>(20), new ThreadPoolExecutor.AbortPolicy()));
         String tag = "promise Exception: ";
         Log.out("========================================");
         Log.out(tag + "begin");

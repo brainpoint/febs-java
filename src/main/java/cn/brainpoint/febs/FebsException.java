@@ -8,10 +8,11 @@ package cn.brainpoint.febs;
 
 /**
  * @author lipengxiang
- * <b>date</b> 2020/1/30 4:07 下午
+ * @date  2020/1/30 4:07 下午
  */
 public class FebsException extends java.lang.Exception {
-
+    
+    private static final long serialVersionUID = 1L;
     private static final String TAG = "[febs] ";
 
     /**

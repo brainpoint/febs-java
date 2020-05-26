@@ -12,7 +12,7 @@ import java.util.HashMap;
  * The request parameter of network transfer.
  *
  * @author pengxiang.li
- * <b>date</b> 2020/1/31 7:22 下午
+ * @date  2020/1/31 7:22 下午
  */
 public class Request {
     public String url;

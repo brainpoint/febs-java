@@ -7,15 +7,19 @@
 package cn.brainpoint.febs;
 
 import java.io.BufferedReader;
-import java.lang.reflect.Array;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
+import org.junit.Test;
 
 import cn.brainpoint.febs.libs.promise.IPromise;
-import org.junit.Test;
 
 /**
  * @author pengxiang.li
- * <b>date</b> 2020/1/31 7:16 下午
+ * @date  2020/1/31 7:16 下午
  */
 public class NetTest {
     @Test

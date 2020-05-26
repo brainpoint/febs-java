@@ -8,7 +8,7 @@ package cn.brainpoint.febs.libs.promise;
 
 /**
  * @author pengxiang.li
- * <b>date</b> 2020/2/1 9:15 下午
+ * @date  2020/2/1 9:15 下午
  */
 public interface IPromise {
     /**

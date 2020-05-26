@@ -10,7 +10,7 @@ import java.util.concurrent.*;
 
 /**
  * @author pengxiang.li
- * <b>date</b> 2020/1/30 5:12 下午
+ * @date  2020/1/30 5:12 下午
  */
 public class Febs {
 

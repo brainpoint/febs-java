@@ -6,9 +6,6 @@
 
 package cn.brainpoint.febs;
 
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-
 import org.junit.Test;
 
 import cn.brainpoint.febs.libs.promise.IReject;
@@ -16,7 +13,7 @@ import cn.brainpoint.febs.libs.promise.IResolve;
 
 /**
  * @author pengxiang.li
- * <b>date</b> 2020/1/31 7:16 下午
+ * @date  2020/1/31 7:16 下午
  */
 public class PromiseTest {
     // resolve.
@@ -184,7 +181,7 @@ public class PromiseTest {
             return 2;
         }).then(res -> {
             Log.out(tag + "then");
-            if ((int) res != 2) {
+            if ((Integer) res != 2) {
                 Log.err(tag + " 2");
             } else {
                 Log.out(tag + " 2");

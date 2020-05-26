@@ -15,7 +15,7 @@ import org.junit.contrib.java.lang.system.SystemOutRule;
 
 /**
  * @author pengxiang.li
- * <b>date</b> 2020/1/31 8:04 下午
+ * @date  2020/1/31 8:04 下午
  */
 public class Log {
     // 正确输出

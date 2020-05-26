@@ -16,7 +16,7 @@ import cn.brainpoint.febs.libs.promise.IResolve;
  * The network utility.
  *
  * @author pengxiang.li
- * <b>date</b> 2020/1/30 8:55 下午
+ * @date  2020/1/30 8:55 下午
  */
 public class Net {
 

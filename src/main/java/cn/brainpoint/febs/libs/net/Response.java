@@ -17,7 +17,7 @@ import java.util.Map;
  * The reponse result of network transfer.
  *
  * @author pengxiang.li
- * <b>date</b> 2020/1/31 7:24 下午
+ * @date  2020/1/31 7:24 下午
  */
 public class Response {
 

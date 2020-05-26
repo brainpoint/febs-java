@@ -8,7 +8,7 @@ package cn.brainpoint.febs;
 
 /**
  * @author pengxiang.li
- * <b>date</b> 2020/2/2 3:43 下午
+ * @date  2020/2/2 3:43 下午
  */
 public class Utils {
 
@@ -28,7 +28,7 @@ public class Utils {
      * @param millisecond sleep time.
      * @return Promise object
      */
-    public static Promise sleep(long millisecond) {
+    public static Promise<Void> sleep(long millisecond) {
         return new Promise<Void>((resolve, reject)->{
             try {
                 Thread.sleep(millisecond);

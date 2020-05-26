@@ -4,7 +4,7 @@
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/cn.brainpoint/febs/badge.svg)](https://maven-badges.herokuapp.com/maven-central/cn.brainpoint/febs/)
 [![License](https://img.shields.io/github/license/brainpoint/febs-java)](https://opensource.org/licenses/MIT)
 
-Febs is a common libraries in stream function. Most api is like javascript.
+Febs is a common libraries in fluent API. Most api is like javascript.
 
 - [How to use](#how-to-use)
 - [Asynchronous in ThreadPool](#Asynchronous-in-ThreadPool)

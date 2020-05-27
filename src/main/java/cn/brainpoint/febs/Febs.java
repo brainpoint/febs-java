@@ -22,6 +22,16 @@ public class Febs {
     private static ExecutorService executorService = null;
 
     /**
+     * The network transfer in fetch style.
+     */
+    public static final Net Net = new Net();
+
+    /**
+     * The utilities: Timer and so on.
+     */
+    public static final Utils Utils = new Utils();
+
+    /**
      * This thread pool config will use in Promise.
      */
     public static class ThreadPoolCfg {

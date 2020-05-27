@@ -6,14 +6,16 @@
 
 package cn.brainpoint.febs;
 
+import cn.brainpoint.febs.libs.promise.IResolveNoRet;
+
 /**
  * @author pengxiang.li
  * @date  2020/2/2 3:43 下午
  */
 public class Utils {
 
-    static {
-        Febs.init();
+    public Utils() {
+
     }
 
     /**
@@ -28,7 +30,7 @@ public class Utils {
      * @param millisecond sleep time.
      * @return Promise object
      */
-    public static Promise<Void> sleep(long millisecond) {
+    public Promise<Void> sleep(long millisecond) {
         return new Promise<Void>((resolve, reject)->{
             try {
                 Thread.sleep(millisecond);
@@ -40,6 +42,4 @@ public class Utils {
             resolve.execute(null);
         });
     }
-
-
 }

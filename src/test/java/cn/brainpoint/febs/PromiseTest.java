@@ -62,7 +62,7 @@ public class PromiseTest {
         long now = System.currentTimeMillis();
 
         promise.then(res -> {
-            return Utils.sleep(1000);
+            return Febs.Utils.sleep(1000);
         }).then(res -> {
             Log.out(tag + "then");
             long ml = Math.abs(System.currentTimeMillis() - now - 2000);
@@ -229,7 +229,6 @@ public class PromiseTest {
         } else {
             Log.err(tag + "finish 3");
         }
-
 
         Promise promise2 = makePromiseException();
         try {

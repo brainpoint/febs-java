@@ -20,9 +20,7 @@ import cn.brainpoint.febs.libs.promise.IResolve;
  */
 public class Net {
 
-    static {
-        Febs.init();
-    }
+    public Net() {}
 
     /***
      * The network transfer in fetch style.
@@ -30,8 +28,8 @@ public class Net {
      * @param url request url.
      * @return Promise object
      */
-    public static Promise<Response> fetch(String url) {
-        return Net.fetch(new Request(url, null, "get", null));
+    public Promise<Response> fetch(String url) {
+        return fetch(new Request(url, null, "get", null));
     }
 
     /**
@@ -40,7 +38,7 @@ public class Net {
      * @param request request parameter.
      * @return Promise object
      */
-    public static Promise<Response> fetch(Request request) {
+    public Promise<Response> fetch(Request request) {
         return new Promise<>(
                 (IResolve<Response> resolve, IReject reject)->{
                     try {

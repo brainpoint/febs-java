@@ -32,7 +32,7 @@ public class NetTest {
 
         for (int i = 0; i < 100; i++) {// code.
             Log.out(tag + " " + i);
-            IPromise p = Net.fetch("https://www.baidu.com")
+            IPromise p = Febs.Net.fetch("https://www.baidu.com")
                     .then(res -> {
                         // code.
                         Log.out(tag + res.statusCode + " " + res.statusMsg);
@@ -76,7 +76,7 @@ public class NetTest {
         Log.out("========================================");
         Log.out(tag + "begin");
 
-        Net.fetch("http://www.baidu.com")
+        Febs.Net.fetch("http://www.baidu.com")
                 .then(res->{
                     return res.blob();
                 })

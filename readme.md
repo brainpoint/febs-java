@@ -10,6 +10,7 @@ Febs is a common libraries in fluent API. Most api is like javascript.
 - [Asynchronous in ThreadPool](#Asynchronous-in-ThreadPool)
 - [Asynchronous in Promise](#Asynchronous-in-Promise)
 - [Network transfer in Fetch](#Network-transfer-in-Fetch)
+- [Utilities](#Utilities)
 
 ## How to use
 
@@ -27,7 +28,7 @@ maven config.
 ```js
 import cn.brainpoint.febs;
 
-Net.fetch("https://xxx")
+Febs.Net.fetch("https://xxx")
     // get response status code.
     .then(res->{
         // code.
@@ -202,7 +203,7 @@ The network transfer in fetch style
 ```js
 import cn.brainpoint.febs;
 
-Net.fetch("https://xxxx")
+Febs.Net.fetch("https://xxxx")
         // get text content.
         .then(res->{ return res.text(); })
         // print content.
@@ -221,7 +222,7 @@ Net.fetch("https://xxxx")
 ```js
 import cn.brainpoint.febs;
 
-Net.fetch("https://xxxx")
+Febs.Net.fetch("https://xxxx")
         // get blob content.
         .then(res->{ return res.blob(); })
         // print content.
@@ -252,7 +253,7 @@ Net.fetch("https://xxxx")
 ```js
 import cn.brainpoint.febs;
 
-Net.fetch("https://xxxx")
+Febs.Net.fetch("https://xxxx")
         // get response status code.
         .then(res->{
             // code.
@@ -285,7 +286,7 @@ Net.fetch("https://xxxx")
 ```js
 import cn.brainpoint.febs;
 
-Net.fetch(new Requset(
+Febs.Net.fetch(new Requset(
                     url,
                     body,
                     method,
@@ -294,4 +295,29 @@ Net.fetch(new Requset(
                 ))
         // get blob content.
         .then(res->{ return res.blob(); })
+```
+
+## Utilities
+
+### sleep
+
+Use `sleep` API to schedule tasks.
+
+```js
+import cn.brainpoint.febs;
+
+Febs.Utils.sleep(1000)
+        .then(()->{
+            System.out.print("after 1000ms.");
+        });
+
+
+Febs.Utils.sleep(1000)
+        .then(res->{
+            System.out.print("after 1000ms.");
+            return Febs.Utils.sleep(2000);
+        })
+        .then(res->{
+            System.out.print("after 2000ms.");
+        });
 ```

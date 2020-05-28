@@ -131,7 +131,8 @@ promise.then(res->{
             });
         })
         .then(res->{
-        });
+        })
+        .execute();
 ```
 
 ### all
@@ -295,6 +296,7 @@ Febs.Net.fetch(new Requset(
                 ))
         // get blob content.
         .then(res->{ return res.blob(); })
+        .execute();
 ```
 
 ## Utilities
@@ -309,7 +311,8 @@ import cn.brainpoint.febs;
 Febs.Utils.sleep(1000)
         .then(()->{
             System.out.print("after 1000ms.");
-        });
+        })
+        .execute();
 
 
 Febs.Utils.sleep(1000)
@@ -319,5 +322,6 @@ Febs.Utils.sleep(1000)
         })
         .then(res->{
             System.out.print("after 2000ms.");
-        });
+        })
+        .execute();
 ```

@@ -6,22 +6,20 @@
 
 package cn.brainpoint.febs;
 
-import cn.brainpoint.febs.libs.promise.IResolveNoRet;
-
 /**
  * @author pengxiang.li
- * @date  2020/2/2 3:43 下午
  */
 public class Utils {
 
-    public Utils() {
+    static {
+        Febs.init();
+    }
 
+    public Utils() {
     }
 
     /**
-     * Sleep in promise way.
-     * <i>e.g.</i>
-     * <code>
+     * Sleep in promise way. <i>e.g.</i> <code>
      *     febs.Utils.sleep(1000).then(()-&gt;{
      *          // Will call in 1000ms.
      *     });
@@ -31,11 +29,10 @@ public class Utils {
      * @return Promise object
      */
     public Promise<Void> sleep(long millisecond) {
-        return new Promise<Void>((resolve, reject)->{
+        return new Promise<>((resolve, reject) -> {
             try {
                 Thread.sleep(millisecond);
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 reject.execute(e);
                 return;
             }

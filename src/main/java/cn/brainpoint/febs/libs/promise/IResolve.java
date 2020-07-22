@@ -8,7 +8,6 @@ package cn.brainpoint.febs.libs.promise;
 
 /**
  * @author pengxiang.li
- * @date  2020/1/31 7:19 下午
  */
 public interface IResolve<T> {
     Object execute(T object) throws Exception;

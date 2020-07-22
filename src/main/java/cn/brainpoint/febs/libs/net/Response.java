@@ -17,65 +17,86 @@ import java.util.Map;
  * The reponse result of network transfer.
  *
  * @author pengxiang.li
- * @date  2020/1/31 7:24 下午
  */
-public class Response {
+public class Response extends Headers {
 
-    private String _content;
-    private URLConnection _connection;
-
-    /**
-     * The headers of response.
-     */
-    public Map<String, List<String>> headers;
+    private String content;
+    private URLConnection connection;
+    private int statusCode;
+    private String statusMsg;
 
     /**
      * The status code of response.
+     * 
+     * @return status code
      */
-    public int statusCode;
+    public int getStatusCode() {
+        return statusCode;
+    }
+
+    /**
+     * The status code of response.
+     * 
+     * @param v status code
+     */
+    public void setStatusCode(int v) {
+        statusCode = v;
+    }
 
     /**
      * The status message of response.
+     * 
+     * @return status message
      */
-    public String statusMsg;
+    public String getStatusMsg() {
+        return statusMsg;
+    }
+
+    /**
+     * The status message of response.
+     * 
+     * @param v status message
+     */
+    public void setStatusMsg(String v) {
+        statusMsg = v;
+    }
 
     public Response(URLConnection connection) {
-        this._content = null;
-        this._connection = connection;
+        super();
+        this.content = null;
+        this.connection = connection;
+    }
+
+    public Response(URLConnection connection, Map<String, List<String>> headerSet) {
+        super(headerSet);
+        this.content = null;
+        this.connection = connection;
     }
 
     /**
      * Get the string content.
+     * 
      * @return string content
      * @throws IOException cause in network io error.
      */
     public String text() throws IOException {
-        if (this._content != null) {
-            return this._content;
+        if (this.content != null) {
+            return this.content;
         }
 
         // 定义 BufferedReader输入流来读取URL的响应
-        BufferedReader in = null;
-        this._content = "";
+        this.content = null;
+        StringBuilder con = new StringBuilder("");
 
-        try {
-            in = new BufferedReader(new InputStreamReader(this._connection.getInputStream()));
+        try (BufferedReader in = new BufferedReader(new InputStreamReader(this.connection.getInputStream()))) {
             String line;
             while ((line = in.readLine()) != null) {
-                this._content += line;
-            }
-        }
-        catch (Exception e) {
-            this._content = null;
-            throw e;
-        }
-        finally {
-            if (in != null) {
-                in.close();
+                con.append(line);
             }
         }
 
-        return this._content;
+        this.content = con.toString();
+        return this.content;
     }
 
     /**
@@ -90,17 +111,7 @@ public class Response {
 
         // 定义 BufferedReader输入流来读取URL的响应
         BufferedReader in = null;
-
-        try {
-            in = new BufferedReader(new InputStreamReader(this._connection.getInputStream()));
-        }
-        catch (Exception e) {
-            if (in != null) {
-                in.close();
-            }
-            throw e;
-        }
-
+        in = new BufferedReader(new InputStreamReader(this.connection.getInputStream()));
         return in;
     }
 }

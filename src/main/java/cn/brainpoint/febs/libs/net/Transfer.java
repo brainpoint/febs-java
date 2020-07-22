@@ -7,89 +7,111 @@
 
 package cn.brainpoint.febs.libs.net;
 
-import cn.brainpoint.febs.libs.net.ssl.AllTrustManager;
-import cn.brainpoint.febs.libs.net.ssl.NullHostNameVerifier;
-
-import javax.net.ssl.HttpsURLConnection;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
+
+import cn.brainpoint.febs.libs.net.ssl.AllTrustManager;
+import cn.brainpoint.febs.libs.net.ssl.NullHostNameVerifier;
 
 /**
  * The network transfer.
  */
 public final class Transfer {
 
-    private static boolean inited = false;
+    private static X509TrustManager defaultTrustManager = new AllTrustManager();
+
+    /**
+     * set the trust manager.<br>
+     * The default trust manager is trust all site.
+     * 
+     * @param trustManager the trust manager object.
+     */
+    public static void setDefaultTrustManger(X509TrustManager trustManager) {
+        defaultTrustManager = trustManager;
+    }
 
     /**
      * Initial the transfer.
      */
-    private static void init() {
-        if (!Transfer.inited) {
-            Transfer.inited = true;
-            HttpsURLConnection.setDefaultHostnameVerifier(new NullHostNameVerifier());
-        }
+    static {
+        HttpsURLConnection.setDefaultHostnameVerifier(new NullHostNameVerifier());
     }
 
     /**
      * Network request
+     * 
      * @param param the request parameter
      * @return the network response
      * @throws Exception cause in network io exception or ssl exception.
      */
-    public static Response request(Request param)
-    throws Exception
-    {
-        int readTimeout = param.timeout == 0 ? 5000: param.timeout;
+    public static Response request(Request param) throws Exception {
+        int readTimeout = param.getTimeout() == 0 ? 5000 : param.getTimeout();
         int connTimeout = readTimeout;
-        String method = null == param.method || param.method.length() == 0 ? "GET": param.method;
+        String method = null == param.getMethod() || param.getMethod().isEmpty() ? "GET" : param.getMethod();
         method = method.toUpperCase();
-
-        init();
 
         Response result;
         PrintWriter out = null;
         try {
-            String urlNameString = param.url;
+            String urlNameString = param.getUrl();
 
-            if (method.equals("GET")) {
-                if (null != param.body) {
-                    urlNameString += "?" + param.body;
-                }
+            if (method.equals("GET") && null != param.getBody() && !param.getBody().isEmpty()) {
+                urlNameString += "?" + param.getBody();
             }
 
             URL realUrl = new URL(urlNameString);
-//            URL realUrl = new URL(null, urlNameString, new sun.net.www.protocol.https.Handler());
+            // URL realUrl = new URL(null, urlNameString, new
+            // sun.net.www.protocol.https.Handler());
 
             // 打开和URL之间的连接
             URLConnection connection = realUrl.openConnection();
             HttpURLConnection httpConn = (HttpURLConnection) connection;
 
-            result = new Response(connection);
-
             // ssl.
             if (urlNameString.indexOf("https://") == 0) {
                 HttpsURLConnection httpsConn = (HttpsURLConnection) httpConn;
-                httpsConn.setSSLSocketFactory(AllTrustManager.getSocketFactory());
+
+                /**
+                 * get ssl socket factory for connect. e.g.
+                 * ((HttpsURLConnection)connect).setSSLSocketFactory(ssf);
+                 */
+                if (defaultTrustManager != null) {
+                    TrustManager[] tm = { defaultTrustManager };
+                    SSLContext sslContext = SSLContext.getInstance("TLS");
+                    sslContext.init(null, tm, new java.security.SecureRandom());
+                    // 从上述SSLContext对象中得到SSLSocketFactory对象
+                    SSLSocketFactory ssf = sslContext.getSocketFactory();
+
+                    httpsConn.setSSLSocketFactory(ssf);
+                }
             }
 
             // 设置通用的请求属性
             connection.setRequestProperty("accept", "*/*");
             connection.setRequestProperty("connection", "Keep-Alive");
-//            connection.setRequestProperty("user-agent",
-//                    "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1;SV1)");
+            // connection.setRequestProperty("user-agent",
+            // "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1;SV1)");
 
             // set headers.
-            if (null != param.headers) {
-                for (String key : param.headers.keySet()) {
-                    connection.setRequestProperty(key, param.headers.get(key));
+            if (0 < param.getHeaderLength()) {
+                for (String key : param.getHeaderKeySet()) {
+                    Iterator<String> itr = param.getHeaders(key).iterator();
+                    while (itr.hasNext()) {
+                        connection.addRequestProperty(key, itr.next());
+                    }
                 }
             }
-
 
             // 发送POST请求必须设置如下两行
             if (method.equals("POST")) {
@@ -106,28 +128,29 @@ public final class Transfer {
             if (method.equals("POST")) {
                 out = new PrintWriter(connection.getOutputStream());
                 // 发送请求参数
-                if (null != param.body) {
-                    out.print(param.body);
+                if (null != param.getBody()) {
+                    out.print(param.getBody());
                 }
                 // flush输出流的缓冲
                 out.flush();
             }
 
             // 建立实际的连接
-//            connection.connect();
+            // connection.connect();
 
             // 获取所有响应头字段
             Map<String, List<String>> map = connection.getHeaderFields();
-//            // 遍历所有的响应头字段
-//            for (String key : map.keySet()) {
-//                System.out.println(key + "--->" + map.get(key));
-//            }
-            result.headers = map;
-            result.statusCode = ((HttpURLConnection) connection).getResponseCode();
-            result.statusMsg = ((HttpURLConnection) connection).getResponseMessage();
-        }
-        catch (Exception e) {
-//            System.out.println("发送请求出现异常！" + e);
+            // // 遍历所有的响应头字段
+            // for (String key : map.keySet()) {
+            // System.out.println(key + "--->" + map.get(key));
+            // }
+            result = new Response(connection, map);
+            result.setStatusCode(((HttpURLConnection) connection).getResponseCode());
+            result.setStatusMsg(((HttpURLConnection) connection).getResponseMessage());
+        } catch (
+
+        Exception e) {
+            // System.out.println("发送请求出现异常！" + e);
             e.printStackTrace();
             throw e;
         }

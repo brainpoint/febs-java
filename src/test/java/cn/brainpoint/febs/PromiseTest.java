@@ -13,7 +13,6 @@ import cn.brainpoint.febs.libs.promise.IResolve;
 
 /**
  * @author pengxiang.li
- * @date  2020/1/31 7:16 下午
  */
 public class PromiseTest {
     // resolve.
@@ -96,7 +95,7 @@ public class PromiseTest {
             } else {
                 Log.out(tag + "finish");
             }
-            Log.out(tag+"dump: "+Promise._dumpDebug());
+            Log.out(tag + "dump: " + Promise.dumpDebug());
         }).execute();
 
         Promise.join(promise);
@@ -144,7 +143,7 @@ public class PromiseTest {
             } else {
                 Log.err(tag + "finish");
             }
-            Log.out(tag+"dump: "+Promise._dumpDebug());
+            Log.out(tag + "dump: " + Promise.dumpDebug());
             promise.setTag(3);
         }).execute();
 
@@ -188,7 +187,7 @@ public class PromiseTest {
             }
         }).finish(() -> {
             Log.out(tag + "finish 2");
-            Log.out(tag+"dump: "+Promise._dumpDebug());
+            Log.out(tag + "dump: " + Promise.dumpDebug());
         }).execute();
 
         Promise.join(promise);
@@ -199,12 +198,13 @@ public class PromiseTest {
      */
     @Test
     public void testException() {
-//        Febs.init(new Febs.ThreadPoolCfg(2, 4, 20000, new ArrayBlockingQueue<>(20), new ThreadPoolExecutor.AbortPolicy()));
+        // Febs.init(new Febs.ThreadPoolCfg(2, 4, 20000, new ArrayBlockingQueue<>(20),
+        // new ThreadPoolExecutor.AbortPolicy()));
         String tag = "promise Exception: ";
         Log.out("========================================");
         Log.out(tag + "begin");
 
-        Promise.setUncaughtExceptionHandler(e->{
+        Promise.setUncaughtExceptionHandler(e -> {
             Log.out(e.getLocalizedMessage());
             return null;
         });

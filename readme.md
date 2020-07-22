@@ -299,6 +299,20 @@ Febs.Net.fetch(new Requset(
         .execute();
 ```
 
+### SSL trust manager
+
+```js
+import cn.brainpoint.febs;
+
+/**
+ * set the trust manager.<br>
+ * The default trust manager is trust all site.
+ * 
+ * @param trustManger the trust manager object.
+ */
+Febs.Net.setDefaultTrustManger(X509TrustManager trustManager);
+```
+
 ## Utilities
 
 ### sleep

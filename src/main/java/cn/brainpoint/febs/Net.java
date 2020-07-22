@@ -6,6 +6,8 @@
 
 package cn.brainpoint.febs;
 
+import javax.net.ssl.X509TrustManager;
+
 import cn.brainpoint.febs.libs.net.Request;
 import cn.brainpoint.febs.libs.net.Response;
 import cn.brainpoint.febs.libs.net.Transfer;
@@ -16,11 +18,25 @@ import cn.brainpoint.febs.libs.promise.IResolve;
  * The network utility.
  *
  * @author pengxiang.li
- * @date  2020/1/30 8:55 下午
  */
 public class Net {
 
-    public Net() {}
+    static {
+        Febs.init();
+    }
+
+    public Net() {
+    }
+
+    /**
+     * set the trust manager.<br>
+     * The default trust manager is trust all site.
+     * 
+     * @param trustManager the trust manager object.
+     */
+    public static void setDefaultTrustManger(X509TrustManager trustManager) {
+        Transfer.setDefaultTrustManger(trustManager);
+    }
 
     /***
      * The network transfer in fetch style.
@@ -29,7 +45,8 @@ public class Net {
      * @return Promise object
      */
     public Promise<Response> fetch(String url) {
-        return fetch(new Request(url, null, "get", null));
+        Request req = new Request(url, null, "get");
+        return fetch(req);
     }
 
     /**
@@ -39,14 +56,13 @@ public class Net {
      * @return Promise object
      */
     public Promise<Response> fetch(Request request) {
-        return new Promise<>(
-                (IResolve<Response> resolve, IReject reject)->{
-                    try {
-                        Response resp = Transfer.request(request);
-                        resolve.execute(resp);
-                    } catch (Exception e) {
-                        reject.execute(e);
-                    }
-                });
+        return new Promise<>((IResolve<Response> resolve, IReject reject) -> {
+            try {
+                Response resp = Transfer.request(request);
+                resolve.execute(resp);
+            } catch (Exception e) {
+                reject.execute(e);
+            }
+        });
     }
 }

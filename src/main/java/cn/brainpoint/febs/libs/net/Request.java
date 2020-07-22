@@ -6,48 +6,82 @@
 
 package cn.brainpoint.febs.libs.net;
 
-import java.util.HashMap;
-
 /**
  * The request parameter of network transfer.
  *
  * @author pengxiang.li
- * @date  2020/1/31 7:22 下午
  */
-public class Request {
-    public String url;
-    public String body;
-    public String method;
-    public HashMap<String, String> headers;
+public class Request extends Headers {
+    private String url;
+    private String body;
+    private String method;
+    private int timeout = 5000;
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String v) {
+        url = v;
+    }
+
+    public String getBody() {
+        return body;
+    }
+
+    public void setBody(String v) {
+        body = v;
+    }
+
+    public String getMethod() {
+        return method;
+    }
+
+    public void setMethod(String v) {
+        method = v;
+    }
 
     /**
-     * Connect and receive timeout.
-     * default in 5000ms.
+     * Connect and receive timeout. default in 5000ms.
+     * 
+     * @return timeout
      */
-    public int timeout = 5000;
+    public int getTimeout() {
+        return timeout;
+    }
+
+    /**
+     * set Connect and receive timeout.
+     * 
+     * @param v timeout
+     */
+    public void setTimeout(int v) {
+        timeout = v;
+    }
 
     public Request() {
+        super();
     }
 
     public Request(String url) {
+        super();
         this.url = url;
         this.body = null;
         this.method = null;
-        this.headers = null;
     }
 
-    public Request(String url, String body, String method, HashMap<String, String> headers) {
+    public Request(String url, String body, String method) {
+        super();
         this.url = url;
         this.body = body;
         this.method = method;
-        this.headers = headers;
     }
 
-    public Request(String url, String body, String method, HashMap<String, String> headers, int timeout) {
+    public Request(String url, String body, String method, int timeout) {
+        super();
         this.timeout = timeout;
         this.url = url;
         this.body = body;
         this.method = method;
-        this.headers = headers;
     }
 }

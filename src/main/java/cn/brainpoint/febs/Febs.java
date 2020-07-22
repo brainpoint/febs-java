@@ -6,11 +6,17 @@
 
 package cn.brainpoint.febs;
 
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
+import cn.brainpoint.febs.exception.FebsRuntimeException;
 
 /**
  * @author pengxiang.li
- * @date  2020/1/30 5:12 下午
  */
 public class Febs {
 
@@ -46,25 +52,29 @@ public class Febs {
 
         public ThreadPoolCfg() {
         }
-        public ThreadPoolCfg(
-                Integer corePoolSize,
-                Integer maximumPoolSize,
-                Integer keepAliveTime,
-                BlockingQueue<Runnable> workQueue,
-                RejectedExecutionHandler handler
-                ) {
-            if (maximumPoolSize != null) { this.maximumPoolSize = maximumPoolSize.intValue(); }
-            if (keepAliveTime != null) { this.keepAliveTime = keepAliveTime.intValue(); }
-            if (corePoolSize != null) { this.corePoolSize = corePoolSize.intValue(); }
-            if (workQueue != null) { this.workQueue = workQueue; }
-            if (handler != null) { this.handler = handler; }
+
+        public ThreadPoolCfg(Integer corePoolSize, Integer maximumPoolSize, Integer keepAliveTime,
+                BlockingQueue<Runnable> workQueue, RejectedExecutionHandler handler) {
+            if (maximumPoolSize != null) {
+                this.maximumPoolSize = maximumPoolSize.intValue();
+            }
+            if (keepAliveTime != null) {
+                this.keepAliveTime = keepAliveTime.intValue();
+            }
+            if (corePoolSize != null) {
+                this.corePoolSize = corePoolSize.intValue();
+            }
+            if (workQueue != null) {
+                this.workQueue = workQueue;
+            }
+            if (handler != null) {
+                this.handler = handler;
+            }
         }
     }
 
     /**
-     * Get a executor service.
-     * <i>e.g.</i>
-     * <code>
+     * Get a executor service. <i>e.g.</i> <code>
          try {
             Future&lt;Object&gt; future = Febs.getExecutorService.submit(()-&gt;{
                                         // do anything in this thread...
@@ -84,7 +94,7 @@ public class Febs {
      */
     public static ExecutorService getExecutorService() {
         if (executorService == null) {
-            throw new RuntimeException("Library uninitialized");
+            throw new FebsRuntimeException("Library uninitialized run \"Febs.init()\" first");
         }
         return executorService;
     }
@@ -102,6 +112,7 @@ public class Febs {
 
     /**
      * Initial with thread pool config.
+     * 
      * @param threadPoolCfg thread pool config.
      */
     public static void init(ThreadPoolCfg threadPoolCfg) {
@@ -113,13 +124,7 @@ public class Febs {
             executorService.shutdownNow();
             executorService = null;
         }
-        executorService = new ThreadPoolExecutor(
-                threadPoolCfg.corePoolSize,
-                threadPoolCfg.maximumPoolSize,
-                threadPoolCfg.keepAliveTime, TimeUnit.MILLISECONDS,
-                threadPoolCfg.workQueue,
-                threadPoolCfg.handler
-                );
+        executorService = new ThreadPoolExecutor(threadPoolCfg.corePoolSize, threadPoolCfg.maximumPoolSize,
+                threadPoolCfg.keepAliveTime, TimeUnit.MILLISECONDS, threadPoolCfg.workQueue, threadPoolCfg.handler);
     }
 }
-

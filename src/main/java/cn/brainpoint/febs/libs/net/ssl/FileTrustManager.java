@@ -31,58 +31,66 @@ import java.io.FileInputStream;
 import java.security.KeyStore;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import javax.net.ssl.*;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import javax.net.ssl.X509TrustManager;
+
+import cn.brainpoint.febs.exception.FebsException;
 
 public class FileTrustManager implements X509TrustManager {
     /*
-     * The default X509TrustManager returned by SunX509.  We'll delegate
-     * decisions to it, and fall back to the logic in this class if the
-     * default X509TrustManager doesn't trust it.
+     * The default X509TrustManager returned by SunX509. We'll delegate decisions to
+     * it, and fall back to the logic in this class if the default X509TrustManager
+     * doesn't trust it.
      */
     private X509TrustManager sunJSSEX509TrustManager;
 
-    FileTrustManager() throws Exception {
-        // create a "default" JSSE X509TrustManager.
-        KeyStore ks = KeyStore.getInstance("JKS");
-        ks.load(new FileInputStream("trustedCerts"),
-                "passphrase".toCharArray());
-        TrustManagerFactory tmf =
-                TrustManagerFactory.getInstance("SunX509", "SunJSSE");
-        tmf.init(ks);
-        TrustManager tms[] = tmf.getTrustManagers();
-        /*
-         * Iterate over the returned trustmanagers, look
-         * for an instance of X509TrustManager.  If found,
-         * use that as our "default" trust manager.
-         */
-        for (int i = 0; i < tms.length; i++) {
-            if (tms[i] instanceof X509TrustManager) {
-                sunJSSEX509TrustManager = (X509TrustManager) tms[i];
-                return;
+    FileTrustManager() throws FebsException {
+        try (FileInputStream fileInput = new FileInputStream("trustedCerts")) {
+            // create a "default" JSSE X509TrustManager.
+            KeyStore ks = KeyStore.getInstance("JKS");
+            ks.load(fileInput, "passphrase".toCharArray());
+            TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509", "SunJSSE");
+            tmf.init(ks);
+            TrustManager[] tms = tmf.getTrustManagers();
+            /*
+             * Iterate over the returned trustmanagers, look for an instance of
+             * X509TrustManager. If found, use that as our "default" trust manager.
+             */
+            for (int i = 0; i < tms.length; i++) {
+                if (tms[i] instanceof X509TrustManager) {
+                    sunJSSEX509TrustManager = (X509TrustManager) tms[i];
+                    return;
+                }
             }
+        } catch (Exception e) {
+            /*
+             * Find some other way to initialize, or else we have to fail the constructor.
+             */
+            throw new FebsException("Couldn't initialize", e);
         }
-        /*
-         * Find some other way to initialize, or else we have to fail the
-         * constructor.
-         */
-        throw new Exception("Couldn't initialize");
+
+        throw new FebsException("Couldn't initialize");
     }
 
     /**
-     * get ssl socket factory for connect.
-     * e.g. ((HttpsURLConnection)connect).setSSLSocketFactory(ssf);
+     * get ssl socket factory for connect. e.g.
+     * ((HttpsURLConnection)connect).setSSLSocketFactory(ssf);
+     * 
      * @return socket factory.
      * @throws Exception cause in ssl exception
      */
-    static public SSLSocketFactory getSocketFactory() throws Exception {
-        TrustManager[] tm = {new FileTrustManager()};
+    public static SSLSocketFactory getSocketFactory() throws Exception {
+        TrustManager[] tm = { new FileTrustManager() };
         SSLContext sslContext = SSLContext.getInstance("SSL", "SunJSSE");
         sslContext.init(null, tm, new java.security.SecureRandom());
         // 从上述SSLContext对象中得到SSLSocketFactory对象
         SSLSocketFactory ssf = sslContext.getSocketFactory();
         return ssf;
     }
-
 
     /**
      * Delegate to the default trust manager.
@@ -105,10 +113,9 @@ public class FileTrustManager implements X509TrustManager {
             sunJSSEX509TrustManager.checkServerTrusted(chain, authType);
         } catch (CertificateException excep) {
             /*
-             * Possibly pop up a dialog box asking whether to trust the
-             * cert chain.
+             * Possibly pop up a dialog box asking whether to trust the cert chain.
              */
-//            throw excep;
+            // throw excep;
         }
     }
 

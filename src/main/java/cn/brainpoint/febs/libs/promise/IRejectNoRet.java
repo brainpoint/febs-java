@@ -8,7 +8,6 @@ package cn.brainpoint.febs.libs.promise;
 
 /**
  * @author pengxiang.li
- * @date  2020/1/31 7:20 下午
  */
 public interface IRejectNoRet {
     void execute(Exception object) throws Exception;

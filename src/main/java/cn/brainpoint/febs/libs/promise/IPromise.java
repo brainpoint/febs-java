@@ -8,7 +8,6 @@ package cn.brainpoint.febs.libs.promise;
 
 /**
  * @author pengxiang.li
- * @date  2020/2/1 9:15 下午
  */
 public interface IPromise {
     /**
@@ -26,6 +25,7 @@ public interface IPromise {
     String getStatus();
 
     Object getTag();
+
     void setTag(Object tag);
 
     boolean isExecutor();

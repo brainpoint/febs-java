@@ -15,6 +15,7 @@ import cn.brainpoint.febs.libs.promise.IResolve;
  * @author pengxiang.li
  */
 public class PromiseTest {
+
     // resolve.
     public Promise makePromiseTimeout() {
         Promise promise = new Promise((IResolve resolve, IReject reject) -> {

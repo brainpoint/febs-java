@@ -61,6 +61,7 @@ public class Headers {
             EMPTY_VALUES.clear();
             return EMPTY_VALUES;
         }
+        key = upperCaseFirst(key);
         if (!this.headerSet.containsKey(key)) {
             EMPTY_VALUES.clear();
             return EMPTY_VALUES;
@@ -79,6 +80,7 @@ public class Headers {
         if (this.headerSet == null) {
             return null;
         }
+        key = upperCaseFirst(key);
         if (!this.headerSet.containsKey(key)) {
             return null;
         }

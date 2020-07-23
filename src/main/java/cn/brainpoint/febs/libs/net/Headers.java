@@ -16,8 +16,6 @@ import java.util.Set;
 
 public class Headers {
 
-    private static final Set<String> EMPTY_KEYSET = new HashSet<>();
-    private static final List<String> EMPTY_VALUES = new ArrayList<>();
     protected Map<String, List<String>> headerSet;
 
     public Headers() {
@@ -43,8 +41,7 @@ public class Headers {
      */
     public Set<String> getHeaderKeySet() {
         if (this.headerSet == null) {
-            EMPTY_KEYSET.clear();
-            return EMPTY_KEYSET;
+            return new HashSet<>();
         } else {
             return this.headerSet.keySet();
         }
@@ -58,13 +55,10 @@ public class Headers {
      */
     public Collection<String> getHeaders(String key) {
         if (this.headerSet == null) {
-            EMPTY_VALUES.clear();
-            return EMPTY_VALUES;
+            return new ArrayList<>();
         }
-        key = upperCaseFirst(key);
         if (!this.headerSet.containsKey(key)) {
-            EMPTY_VALUES.clear();
-            return EMPTY_VALUES;
+            return new ArrayList<>();
         }
 
         return this.headerSet.get(key);
@@ -80,7 +74,6 @@ public class Headers {
         if (this.headerSet == null) {
             return null;
         }
-        key = upperCaseFirst(key);
         if (!this.headerSet.containsKey(key)) {
             return null;
         }

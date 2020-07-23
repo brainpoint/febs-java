@@ -6,10 +6,9 @@
 
 package cn.brainpoint.febs;
 
-import org.junit.Test;
-
 import cn.brainpoint.febs.libs.promise.IReject;
 import cn.brainpoint.febs.libs.promise.IResolve;
+import org.junit.Test;
 
 /**
  * @author pengxiang.li
@@ -17,8 +16,8 @@ import cn.brainpoint.febs.libs.promise.IResolve;
 public class PromiseTest {
 
     // resolve.
-    public Promise makePromiseTimeout() {
-        Promise promise = new Promise((IResolve resolve, IReject reject) -> {
+    public Promise<Object> makePromiseTimeout() {
+        Promise<Object> promise = new Promise<>((IResolve<Object> resolve, IReject reject) -> {
             Log.out("begin %d %d", System.currentTimeMillis(), Thread.currentThread().getId());
             try {
                 Thread.sleep(1000);
@@ -29,8 +28,8 @@ public class PromiseTest {
         return promise;
     }
 
-    public Promise makePromiseReject() {
-        Promise promise = new Promise((IResolve resolve, IReject reject) -> {
+    public Promise<Object> makePromiseReject() {
+        Promise<Object> promise = new Promise<>((IResolve<Object> resolve, IReject reject) -> {
             reject.execute(null);
         });
         return promise;
@@ -43,8 +42,8 @@ public class PromiseTest {
         return promise;
     }
 
-    public Promise makePromiseException() {
-        Promise promise = new Promise((IResolve resolve, IReject reject) -> {
+    public Promise<Object> makePromiseException() {
+        Promise<Object> promise = new Promise<>((IResolve<Object> resolve, IReject reject) -> {
             throw new Exception("break in promise");
         });
         return promise;
@@ -53,15 +52,15 @@ public class PromiseTest {
     /**
      * 测试 then的可靠性.
      */
-    @Test
+     @Test
     public void testTimeoutAndThen() {
         String tag = "promise TimeoutAndThen: ";
         Log.out("========================================");
         Log.out(tag + "begin");
-        Promise promise = makePromiseTimeout();
+        Promise<Object> promise = makePromiseTimeout();
         long now = System.currentTimeMillis();
 
-        promise.then(res -> {
+        PromiseFuture future = promise.then(res -> {
             return Febs.Utils.sleep(1000);
         }).then(res -> {
             Log.out(tag + "then");
@@ -75,7 +74,7 @@ public class PromiseTest {
             return 1;
         }).then(res -> {
             Log.out(tag + "then");
-            if ((int) res == 1) {
+            if ((Integer) res == 1) {
                 Log.out(tag + " 2");
             } else {
                 Log.err(tag + " 2");
@@ -83,7 +82,7 @@ public class PromiseTest {
             return 2;
         }).then(res -> {
             Log.out(tag + "then");
-            if ((int) res == 2) {
+            if ((Integer) res == 2) {
                 Log.out(tag + " 3");
             } else {
                 Log.err(tag + " 3");
@@ -99,20 +98,24 @@ public class PromiseTest {
             Log.out(tag + "dump: " + Promise.dumpDebug());
         }).execute();
 
-        Promise.join(promise);
+        try {
+            future.get();
+        } catch (Exception e) {
+            Log.err(tag + e.getMessage());
+        }
     }
 
     /**
      * 测试fail是否能正确触发.
      */
-    @Test
+     @Test
     public void testFail() {
         String tag = "promise Fail: ";
         Log.out("========================================");
         Log.out(tag + "begin");
-        Promise promise = makePromiseReject();
+        Promise<Object> promise = makePromiseReject();
 
-        promise.then(res -> {
+        PromiseFuture future = promise.then(res -> {
             Log.out(tag + "then");
             Log.err(tag + " 1");
             return null;
@@ -126,7 +129,7 @@ public class PromiseTest {
             return 2;
         }).then(res -> {
             Log.out(tag + "then");
-            if ((int) res != 2) {
+            if ((Integer) res != 2) {
                 Log.err(tag + " 2");
             } else {
                 Log.out(tag + " 2");
@@ -148,25 +151,30 @@ public class PromiseTest {
             promise.setTag(3);
         }).execute();
 
-        Promise.join(promise);
-        if ((int) promise.getTag() == 3) {
-            Log.out(tag + "finish 2");
-        } else {
-            Log.err(tag + "finish 2");
+        try {
+            Object ret = future.get();
+
+            if ((int) promise.getTag() == 3) {
+                Log.out(tag + "finish 2");
+            } else {
+                Log.err(tag + "finish 2");
+            }
+        } catch (Exception e) {
+            Log.err(tag + e.getMessage());
         }
     }
 
     /**
      * 测试模板类型.
      */
-    @Test
+     @Test
     public void testTemplate() {
         String tag = "promise Template: ";
         Log.out("========================================");
         Log.out(tag + "begin");
         Promise<Integer> promise = makePromiseTemplate2();
 
-        promise.then((Integer res) -> {
+        PromiseFuture future = promise.then((Integer res) -> {
             Log.out(tag + "then");
             if (res == 2) {
                 Log.out(tag + " 1");
@@ -191,13 +199,17 @@ public class PromiseTest {
             Log.out(tag + "dump: " + Promise.dumpDebug());
         }).execute();
 
-        Promise.join(promise);
+        try {
+            future.get();
+        } catch (Exception e) {
+            Log.err(tag + e.getMessage());
+        }
     }
 
     /**
      * 测试异常情况.
      */
-    @Test
+     @Test
     public void testException() {
         // Febs.init(new Febs.ThreadPoolCfg(2, 4, 20000, new ArrayBlockingQueue<>(20),
         // new ThreadPoolExecutor.AbortPolicy()));
@@ -210,9 +222,9 @@ public class PromiseTest {
             return null;
         });
 
-        Promise promise = makePromiseException();
+        Promise<Object> promise = makePromiseException();
 
-        promise.then(res -> {
+        PromiseFuture future = promise.then(res -> {
             Log.err(tag + "then");
             return 2;
         }).fail((Exception e) -> {
@@ -224,22 +236,25 @@ public class PromiseTest {
             Log.out(tag + "finish 2");
         }).execute();
 
-        Promise.join(promise);
-        if ((int) promise.getTag() == 1) {
-            Log.out(tag + "finish 3");
-        } else {
-            Log.err(tag + "finish 3");
+        try {
+            future.get();
+            if ((int) promise.getTag() == 1) {
+                Log.out(tag + "finish 3");
+            } else {
+                Log.err(tag + "finish 3");
+            }
+        } catch (Exception e) {
+            Log.err(tag + e.getMessage());
         }
 
-        Promise promise2 = makePromiseException();
+        Promise<Object> promise2 = makePromiseException();
         try {
             promise2.then(res -> {
                 Log.err(tag + "then");
                 return 2;
             }).finish(() -> {
                 Log.out(tag + "finish 4");
-            }).execute();
-            Promise.join(promise2);
+            }).execute().get();
         } catch (Exception e) {
             Log.out(tag + e.getLocalizedMessage());
             promise2.setTag(1);

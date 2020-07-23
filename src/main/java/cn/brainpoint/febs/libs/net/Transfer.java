@@ -55,6 +55,7 @@ public final class Transfer {
      * @return the network response
      * @throws Exception cause in network io exception or ssl exception.
      */
+    @SuppressWarnings("all")
     public static Response request(Request param) throws Exception {
         int readTimeout = param.getTimeout() == 0 ? 5000 : param.getTimeout();
         int connTimeout = readTimeout;
@@ -147,9 +148,7 @@ public final class Transfer {
             result = new Response(connection, map);
             result.setStatusCode(((HttpURLConnection) connection).getResponseCode());
             result.setStatusMsg(((HttpURLConnection) connection).getResponseMessage());
-        } catch (
-
-        Exception e) {
+        } catch (Exception e) {
             // System.out.println("发送请求出现异常！" + e);
             e.printStackTrace();
             throw e;

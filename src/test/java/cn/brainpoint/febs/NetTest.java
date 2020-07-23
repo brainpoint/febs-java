@@ -12,6 +12,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.junit.Test;
 
@@ -37,6 +40,8 @@ public class NetTest {
 
                 // headers.
                 Set<String> keySet = res.getHeaderKeySet();
+                Log.out(tag + "header: " + keySet.size());
+                Log.out(tag + "header: " + keySet.toString());
                 Iterator<String> it1 = keySet.iterator();
                 while (it1.hasNext()) {
                     String ID = it1.next();
@@ -48,6 +53,7 @@ public class NetTest {
                 return res.text();
             }).then(res -> {
                 Log.out(tag + res);
+                return res;
             }).fail((e) -> {
                 e.printStackTrace(System.err);
                 Log.err(tag + e.getMessage());
@@ -58,36 +64,58 @@ public class NetTest {
             all.add(p);
         }
 
-        Promise.join(Promise.all(all).then(() -> {
-            Log.out(tag + " finish");
-        }).fail(e -> {
-            e.printStackTrace();
-        }));
+        try {
+            String ret = (String) Promise.all(all).then((res) -> {
+                Log.out(tag + " finish: " + res.toString());
+                return res.toString();
+            }).fail(e -> {
+                e.printStackTrace();
+            }).execute().get();
+
+            Log.out(tag + " show in future", ret);
+        } catch (Exception e) {
+            Log.err(tag + e.getMessage());
+        }
     }
 
-    @Test
+     @Test
     public void testBlob() {
         String tag = "Net Blob: ";
         Log.out("========================================");
         Log.out(tag + "begin");
 
-        Febs.Net.fetch("http://www.baidu.com").then(res -> {
-            return res.blob();
-        }).then((res) -> {
-            BufferedReader in = (BufferedReader) res;
-            char buf[] = new char[1024];
+        try {
+            String ret = (String) Febs.Net.fetch("http://www.baidu.com").then(res -> {
+                return res.blob();
+            }).then((res) -> {
+                BufferedReader in = (BufferedReader) res;
+                char buf[] = new char[1024];
 
-            while (in.read(buf, 0, buf.length) != -1) {
-                Log.out(tag + " %s ", Arrays.toString(buf));
-                Arrays.fill(buf, '\0');
+                while (in.read(buf, 0, buf.length) != -1) {
+                    Log.out(tag + " %s ", Arrays.toString(buf));
+                    Arrays.fill(buf, '\0');
+                }
+
+                // important to call close().
+                in.close();
+
+                return "success";
+            }).fail((e) -> {
+                Log.err(tag + e.getMessage());
+            }).finish(() -> {
+                Log.out(tag + "dump: " + Promise.dumpDebug());
+            }).execute().get(1000, TimeUnit.MILLISECONDS);
+
+            if (!"success".equals(ret)) {
+                Log.err(tag + "return error");
             }
-
-            // important to call close().
-            in.close();
-        }).fail((e) -> {
+            else {
+                Log.out(tag + "success");
+            }
+        } catch (TimeoutException e) {
+            Log.err(tag + "timeout");
+        } catch (ExecutionException e) {
             Log.err(tag + e.getMessage());
-        }).finish(() -> {
-            Log.out(tag + "dump: " + Promise.dumpDebug());
-        }).execute();
+        }
     }
 }

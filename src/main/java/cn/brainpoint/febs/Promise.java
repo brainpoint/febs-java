@@ -10,8 +10,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import cn.brainpoint.febs.exception.FebsException;
 import cn.brainpoint.febs.exception.FebsRuntimeException;
@@ -27,11 +30,13 @@ import cn.brainpoint.febs.libs.promise.IResolveNoRet;
  * The Promise utility.
  *
  * <i>e.g.</i> <code>
- *  new Promise((resolve, reject)-&gt;{  resolve.execute();  })
+ *  PromiseFuture future = new Promise((resolve, reject)-&gt;{  resolve.execute();  })
  *    .then(()-&gt;{})
  *    .then(()-&gt;{})
  *    .fail((e)-&gt;{})
  *    .execute();
+ *
+ *  future.get();
  * </code>
  *
  * @author pengxiang.li
@@ -62,7 +67,11 @@ public class Promise<T> implements java.lang.Comparable<T>, IPromise {
     private Promise<?> ancestor;
     private boolean inExecute = false;
     private Object inTag; // internal use.
+    private Object inResult;
+    private Object inResultTmp; // 结果先存储至临时位置.
     private CompletableFuture<?> inCf;
+    private Lock inLock;
+    private Condition inCondition;
 
     private static class PromiseExecutor<T> implements IPromise {
         private Promise<T> p;
@@ -77,9 +86,8 @@ public class Promise<T> implements java.lang.Comparable<T>, IPromise {
         }
 
         @Override
-        public IPromise execute() {
-            this.p.execute();
-            return this;
+        public PromiseFuture execute() {
+            return this.p.execute();
         }
 
         @Override
@@ -133,7 +141,7 @@ public class Promise<T> implements java.lang.Comparable<T>, IPromise {
                 @Override
                 public void execute(IResolve<Object[]> resolve, IReject reject) throws Exception {
                     AtomicReference<Exception> ex = new AtomicReference<>(null);
-                    AtomicInteger completedCount = new AtomicInteger(0);
+                    // AtomicInteger completedCount = new AtomicInteger(0);
                     Object[] result = new Object[list.size()];
 
                     for (int i = 0; i < list.size(); i++) {
@@ -152,28 +160,32 @@ public class Promise<T> implements java.lang.Comparable<T>, IPromise {
                         // can call execute
                         Promise<?> ancestor = promise.ancestor == null ? promise : promise.ancestor;
                         if (!ancestor.status.equals(STATUS_PENDING) || ancestor.inExecute) {
-                            reject.execute(new RuntimeException("Promise is not in pending status"));
+                            reject.execute(new FebsRuntimeException("Promise is not in pending status"));
                             return;
                         }
 
-                        promise.inTag = i;
-                        promise.then(res -> {
-                            result[(int) promise.inTag] = res;
-                            completedCount.getAndIncrement();
-                        }).fail(e -> {
+                        try {
+                            promise.inTag = i;
+                            promise.then(res -> {
+                                result[(int) promise.inTag] = res;
+                                // completedCount.getAndIncrement();
+                            }).fail(e -> {
+                                ex.set(e);
+                            }).execute().get();
+                        } catch (ExecutionException e) {
                             ex.set(e);
-                        }).execute();
-
-                        join(promise);
-                    }
+                            break;
+                        }
+                    } // for.
 
                     if (ex.get() != null) {
                         reject.execute(ex.get());
                         return;
                     }
-                    if (completedCount.get() == result.length) {
-                        resolve.execute(result);
-                    }
+
+                    // if (completedCount.get() == result.length) {
+                    resolve.execute(result);
+                    // }
                 }
             });
         } else {
@@ -204,82 +216,6 @@ public class Promise<T> implements java.lang.Comparable<T>, IPromise {
         return all(Arrays.asList(list));
     }
 
-    /**
-     * Wait all promise done. will broke thread.
-     *
-     * @param list Promise object set.
-     */
-    public static void join(IPromise... list) {
-        join(10, list);
-    }
-
-    /**
-     * Wait all promise done. will broke thread.
-     *
-     * @param list Promise object set.
-     */
-    public static void join(List<IPromise> list) {
-        join(10, list);
-    }
-
-    /**
-     * Wait all promise done. will broke thread.
-     *
-     * @param list              Promise object set.
-     * @param peekInMillisecond peek interval.
-     */
-    public static void join(int peekInMillisecond, IPromise... list) {
-        if (list.length == 0) {
-            return;
-        }
-
-        join(peekInMillisecond, Arrays.asList(list));
-    }
-
-    /**
-     * Wait all promise done. will broke thread.
-     *
-     * @param list              Promise object set.
-     * @param peekInMillisecond peek interval.
-     */
-    public static void join(int peekInMillisecond, List<IPromise> list) {
-        if (list == null || list.isEmpty()) {
-            return;
-        }
-
-        while (true) {
-            int doneCount = 0;
-            for (int i = 0; i < list.size(); i++) {
-                IPromise p1 = list.get(i);
-                if (!STATUS_PENDING.equals(p1.getStatus())) {
-                    doneCount++;
-                } else if (p1 instanceof PromiseExecutor) {
-                    PromiseExecutor<?> pe = (PromiseExecutor<?>) p1;
-                    Promise<?> p = pe.p;
-                    p = p.ancestor == null ? p : p.ancestor;
-                    if (!p.inExecute) {
-                        p.execute();
-                    }
-                } else {
-                    Promise<?> p = (Promise<?>) p1;
-                    p = p.ancestor == null ? p : p.ancestor;
-                    if (!p.inExecute) {
-                        p.execute();
-                    }
-                }
-            }
-            if (doneCount == list.size()) {
-                return;
-            }
-            try {
-                Thread.sleep(peekInMillisecond);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new FebsRuntimeException(e);
-            }
-        }
-    }
-
     @Override
     public boolean isExecutor() {
         return false;
@@ -293,6 +229,57 @@ public class Promise<T> implements java.lang.Comparable<T>, IPromise {
     @Override
     public String getStatus() {
         return this.ancestor == null ? this.status : this.ancestor.status;
+    }
+
+    public Object getResult() {
+        if (!this.getStatus().equals(STATUS_FULFILLED)) {
+            return null;
+        }
+
+        getLock().lock();
+        Object ret = this.ancestor == null ? this.inResult : this.ancestor.inResult;
+        getLock().unlock();
+        return ret;
+    }
+
+    private void setResult() {
+        getLock().lock();
+        if (this.ancestor == null) {
+            if (this.inResult == null) {
+                this.inResult = this.inResultTmp;
+                this.inResultTmp = null;
+            }
+        } else {
+            if (this.ancestor.inResult == null) {
+                this.ancestor.inResult = this.ancestor.inResultTmp;
+                this.ancestor.inResultTmp = null;
+            }
+        }
+        getLock().unlock();
+    }
+
+    private void setResultTmp(Object obj) {
+        getLock().lock();
+        if (this.ancestor == null) {
+            this.inResultTmp = obj;
+        } else {
+            this.ancestor.inResultTmp = obj;
+        }
+        getLock().unlock();
+    }
+
+    private Lock getLock() {
+        if (this.ancestor == null) {
+            if (inLock == null) {
+                inLock = new ReentrantLock();
+            }
+            return inLock;
+        } else {
+            if (this.ancestor.inLock == null) {
+                this.ancestor.inLock = new ReentrantLock();
+            }
+            return this.ancestor.inLock;
+        }
     }
 
     @Override
@@ -348,7 +335,7 @@ public class Promise<T> implements java.lang.Comparable<T>, IPromise {
      * @return Promise interface
      */
     @Override
-    public IPromise execute() {
+    public PromiseFuture execute() {
         Promise<?> ancestor = this.ancestor == null ? this : this.ancestor;
 
         if (!ancestor.status.equals(STATUS_PENDING) || ancestor.inExecute) {
@@ -356,17 +343,31 @@ public class Promise<T> implements java.lang.Comparable<T>, IPromise {
         } else {
             ancestor.inExecute = true;
 
+            if (ancestor.inLock != null || ancestor.inCondition != null) {
+                throw new FebsRuntimeException("Promise lock error");
+            }
+            // ancestor.inLock = new ReentrantLock();
+            ancestor.inCondition = getLock().newCondition();
+
             try {
                 ancestor.inCf = CompletableFuture.supplyAsync(() -> {
                     try {
                         ancestor.onExecuteListener.execute(res -> {
+
+                            setResultTmp(res);
                             ancestor.resolve(res);
+
                             return null;
                         }, e -> {
+                            setResultTmp(e);
                             ancestor.reject(e);
+                            // setResultTmp(e); don't do it
+
                             return null;
                         });
                     } catch (Exception e) {
+                        setResultTmp(e);
+
                         throw new FebsRuntimeException(e);
                     }
                     return null;
@@ -374,8 +375,11 @@ public class Promise<T> implements java.lang.Comparable<T>, IPromise {
                     globalObjectSet.remove(ancestor);
                     if (e != null) {
                         try {
+                            setResultTmp(e);
                             ancestor.reject((Exception) e);
+                            // setResultTmp(e); don't do it
                         } catch (Exception ex) {
+                            setResultTmp(ex);
                             throw new FebsRuntimeException(ex);
                         } finally {
                             // release memory
@@ -387,6 +391,11 @@ public class Promise<T> implements java.lang.Comparable<T>, IPromise {
                                 p.child = null;
                                 p = p1;
                             } while (p != null);
+
+                            setResult();
+                            ancestor.inLock.lock();
+                            ancestor.inCondition.signalAll();
+                            ancestor.inLock.unlock();
                         }
                     }
                     // 获取最终的结果.
@@ -395,12 +404,18 @@ public class Promise<T> implements java.lang.Comparable<T>, IPromise {
                         if (STATUS_PENDING.equals(p.getStatus())) {
                             p.status = STATUS_FULFILLED;
                         }
+
+                        setResult();
                         do {
                             p.inCf = null;
                             Promise<?> p1 = p.child;
                             p.child = null;
                             p = p1;
                         } while (p != null);
+
+                        ancestor.inLock.lock();
+                        ancestor.inCondition.signalAll();
+                        ancestor.inLock.unlock();
                     }
                     return null;
                 });
@@ -409,7 +424,7 @@ public class Promise<T> implements java.lang.Comparable<T>, IPromise {
             }
         }
 
-        return this;
+        return new PromiseFuture(this, ancestor.inLock, ancestor.inCondition);
     }
 
     private IPromise executeInSync() {
@@ -422,13 +437,7 @@ public class Promise<T> implements java.lang.Comparable<T>, IPromise {
             Exception ee = null;
 
             try {
-                ancestor.onExecuteListener.execute(res -> {
-                    ancestor.resolve(res);
-                    return null;
-                }, e -> {
-                    ancestor.reject(e);
-                    return null;
-                });
+                ancestor.resolve(null);
             } catch (Exception e) {
                 ee = e;
             }
@@ -476,6 +485,7 @@ public class Promise<T> implements java.lang.Comparable<T>, IPromise {
      * @param listener IResolve
      * @return It returns a promise for satisfying next chain call.
      */
+    @SuppressWarnings("all")
     public Promise<?> then(IResolve<T> listener) {
         onSuccessListenerRunnable = null;
         onSuccessListenerNoRet = null;
@@ -491,6 +501,7 @@ public class Promise<T> implements java.lang.Comparable<T>, IPromise {
      * @param listener IResolve
      * @return It returns a promise for satisfying next chain call.
      */
+    @SuppressWarnings("all")
     public Promise<?> then(IResolveNoRet<T> listener) {
         onSuccessListenerRunnable = null;
         onSuccessListener = null;
@@ -506,6 +517,7 @@ public class Promise<T> implements java.lang.Comparable<T>, IPromise {
      * @param runnable the runnable object
      * @return It returns a promise for satisfying next chain call.
      */
+    @SuppressWarnings("all")
     public Promise<?> then(Runnable runnable) {
         onSuccessListenerRunnable = runnable;
         onSuccessListener = null;
@@ -521,6 +533,7 @@ public class Promise<T> implements java.lang.Comparable<T>, IPromise {
      * @param listener the handler for this fail chain.
      * @return It returns a promise for satisfying next chain call.
      */
+    @SuppressWarnings("all")
     public Promise<?> fail(IReject listener) {
         onErrorListener = listener;
         onErrorListenerNoRet = null;
@@ -535,6 +548,7 @@ public class Promise<T> implements java.lang.Comparable<T>, IPromise {
      * @param listener the handler for this fail chain.
      * @return It returns a promise for satisfying next chain call.
      */
+    @SuppressWarnings("all")
     public Promise<?> fail(IRejectNoRet listener) {
         onErrorListener = null;
         onErrorListenerNoRet = listener;
@@ -582,26 +596,30 @@ public class Promise<T> implements java.lang.Comparable<T>, IPromise {
     }
 
     private Object handleSuccessAsyncRun(Object param) {
+
         try {
             if (onSuccessListener != null) {
                 Object res = onSuccessListener.execute((T) param);
+                this.setResultTmp(res);
                 handleSuccessAsyncAccept(res);
             } else if (onSuccessListenerNoRet != null) {
                 onSuccessListenerNoRet.execute((T) param);
+                this.setResultTmp(null);
                 handleSuccessAsyncAccept(null);
             } else if (onSuccessListenerRunnable != null) {
                 onSuccessListenerRunnable.run();
+                this.setResultTmp(null);
                 handleSuccessAsyncAccept(null);
             } else if (child != null) {
                 child.handleSuccessAsyncRun(param);
             } else if (onFinishListener != null) {
                 // Promise ancestor = this.ancestor == null ? this : this.ancestor;
                 // globalObjectSet.remove(ancestor);
-
                 onFinishListener.execute();
             }
             return null;
         } catch (Exception e) {
+            this.setResultTmp(e);
             throw new FebsRuntimeException(e);
         }
     }
@@ -661,6 +679,7 @@ public class Promise<T> implements java.lang.Comparable<T>, IPromise {
     }
 
     private void handleError(java.lang.Exception object) throws Exception {
+        setResultTmp(object);
         if (onErrorListener != null || onErrorListenerNoRet != null) {
             Object res = null;
             try {
@@ -708,10 +727,11 @@ public class Promise<T> implements java.lang.Comparable<T>, IPromise {
         } else if (child != null) {
             child.reject(object);
         } else if (onFinishListener != null) {
+            FebsException ex = new FebsException("Promise uncaught exception", object);
             if (globalUncaughtExceptionHandler != null) {
-                globalUncaughtExceptionHandler.execute(new FebsException("Promise uncaught exception", object));
+                globalUncaughtExceptionHandler.execute(ex);
             }
-
+            setResultTmp(ex);
             onFinishListener.execute();
         }
     }

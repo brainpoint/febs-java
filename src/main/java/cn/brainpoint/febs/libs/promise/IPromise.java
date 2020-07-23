@@ -6,6 +6,8 @@
 
 package cn.brainpoint.febs.libs.promise;
 
+import cn.brainpoint.febs.PromiseFuture;
+
 /**
  * @author pengxiang.li
  */
@@ -15,7 +17,7 @@ public interface IPromise {
      *
      * @return promise interface.
      */
-    IPromise execute();
+    PromiseFuture execute();
 
     /**
      * The current status of Promise.

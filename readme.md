@@ -20,7 +20,7 @@ maven config.
 <dependency>
     <groupId>cn.brainpoint</groupId>
     <artifactId>febs</artifactId>
-    <version>0.0.3</version>
+    <version>0.1.0</version>
 </dependency>
 ```
 
@@ -28,20 +28,31 @@ maven config.
 ```js
 import cn.brainpoint.febs;
 
-Febs.Net.fetch("https://xxx")
-    // get response status code.
-    .then(res->{
-        // code.
-        System.out.print(res.statusCode);
-        // message.
-        System.out.print(res.statusMsg);
-        
-        // get text content.
-        return res.text();
-    })
-    .then(content->{
+//
+// It will execute asynchronously after call `execute()`
+//
+PromiseFuture future = Febs.Net.fetch("https://xxx")
+                            // get response status code.
+                            .then(res->{
+                                // code.
+                                System.out.print(res.statusCode);
+                                // message.
+                                System.out.print(res.statusMsg);
+                                
+                                // get text content.
+                                return res.text();
+                            })
+                            .then(content->{
+                        
+                            })
+                            .execute();
 
-    });
+
+//
+// Can use `future.get()` to get result in synchronize.
+//
+String result = (String) future.get();
+
 ```
 
 
@@ -108,17 +119,17 @@ Promise promise = new Promise((IResolve resolve, IReject reject)-> {
 /**
  * chain.
  */
-promise.then(res->{  })
-       .then(()->{ return 1; })
-       .then(res1->{  })
-       .fail(e->{  })  // same as javascript catch()
-       .finish(()->{}) // same as javascript finally()
-       .execute();  // activate promise.
+PromiseFuture = promise.then(res->{  })
+                       .then(()->{ return 1; })
+                       .then(res1->{  })
+                       .fail(e->{  })  // same as javascript catch()
+                       .finish(()->{}) // same as javascript finally()
+                       .execute();  // activate promise.
 
 /**
  * Block until promise finish, if you want to wait.
  */
-Promise.join(promise);
+PromiseFuture.get();
 ```
 
 ### return another promise object in chain.
@@ -147,7 +158,7 @@ Promise[] promiseArr = {...};
 /**
  * execute all promise object.
  */
-Promise promise = Promise.all(promiseArr)
+Promise.all(promiseArr)
        .then(res->{
             // all promise done.
         })
@@ -155,15 +166,6 @@ Promise promise = Promise.all(promiseArr)
             // if some promise rejected.
         })
        .execute();
-```
-
-### join
-
-It will store promise object in global until promise finish, after promise object is created. We can call Promise.join to wait promise finish.
-
-```js
-IPromise promiseObj = new Promise((resolve, reject)->{ resolve.execute(); });
-Promise.join(promiseObj);
 ```
 
 ### template
@@ -246,7 +248,7 @@ Febs.Net.fetch("https://xxxx")
         .execute();
 ```
 
-> IMPORTANT: close BufferedReader.
+> IMPORTANT: close BufferedReader after read blob.
 
 
 ### Get response headers.

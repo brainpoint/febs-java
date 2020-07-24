@@ -57,6 +57,7 @@ public class Headers {
         if (this.headerSet == null) {
             return new ArrayList<>();
         }
+        key = upperCaseFirst(key);
         if (!this.headerSet.containsKey(key)) {
             return new ArrayList<>();
         }
@@ -74,6 +75,7 @@ public class Headers {
         if (this.headerSet == null) {
             return null;
         }
+        key = upperCaseFirst(key);
         if (!this.headerSet.containsKey(key)) {
             return null;
         }

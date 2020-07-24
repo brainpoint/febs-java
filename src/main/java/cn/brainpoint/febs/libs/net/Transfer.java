@@ -11,9 +11,11 @@ import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -141,11 +143,22 @@ public final class Transfer {
 
             // 获取所有响应头字段
             Map<String, List<String>> map = connection.getHeaderFields();
+
+            // remove key == null
+            Map<String, List<String>> map1 = new HashMap<>();
+            Iterator<Entry<String, List<String>>> itr = map.entrySet().iterator();
+            while (itr.hasNext()) {
+                Entry<String, List<String>> key = itr.next();
+                if (null != key.getKey()) {
+                    map1.put(key.getKey(), key.getValue());
+                }
+            }
+
             // // 遍历所有的响应头字段
             // for (String key : map.keySet()) {
             // System.out.println(key + "--->" + map.get(key));
             // }
-            result = new Response(connection, map);
+            result = new Response(connection, map1);
             result.setStatusCode(((HttpURLConnection) connection).getResponseCode());
             result.setStatusMsg(((HttpURLConnection) connection).getResponseMessage());
         } catch (Exception e) {

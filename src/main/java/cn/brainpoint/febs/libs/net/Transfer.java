@@ -69,9 +69,10 @@ public final class Transfer {
         try {
             String urlNameString = param.getUrl();
 
-            if (method.equals("GET") && null != param.getBody() && !param.getBody().isEmpty()) {
-                urlNameString += "?" + param.getBody();
-            }
+            // if (method.equals("GET") && null != param.getBody() &&
+            // !param.getBody().isEmpty()) {
+            // urlNameString += "?" + param.getBody();
+            // }
 
             URL realUrl = new URL(urlNameString);
             // URL realUrl = new URL(null, urlNameString, new
@@ -128,15 +129,15 @@ public final class Transfer {
             httpConn.setRequestMethod(method);
 
             // 获取URLConnection对象对应的输出流
-            if (method.equals("POST")) {
+            // if (method.equals("POST")) {
+            // 发送请求参数
+            if (null != param.getBody() && param.getBody().length() > 0) {
                 out = new PrintWriter(connection.getOutputStream());
-                // 发送请求参数
-                if (null != param.getBody()) {
-                    out.print(param.getBody());
-                }
+                out.print(param.getBody());
                 // flush输出流的缓冲
                 out.flush();
             }
+            // }
 
             // 建立实际的连接
             // connection.connect();

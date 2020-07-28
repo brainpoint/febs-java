@@ -132,6 +132,7 @@ public final class Transfer {
             // if (method.equals("POST")) {
             // 发送请求参数
             if (null != param.getBody() && param.getBody().length() > 0) {
+                connection.setDoOutput(true);
                 out = new PrintWriter(connection.getOutputStream());
                 out.print(param.getBody());
                 // flush输出流的缓冲

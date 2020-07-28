@@ -18,12 +18,32 @@ import java.util.concurrent.TimeoutException;
 
 import org.junit.Test;
 
+import cn.brainpoint.febs.libs.net.Request;
 import cn.brainpoint.febs.libs.promise.IPromise;
 
 /**
  * @author pengxiang.li
  */
 public class NetTest {
+
+    @Test
+    public void testGet() {
+        String tag = "Net get: ";
+        Log.out("========================================");
+        Log.out(tag + "begin");
+
+        Request req = new Request("https://www.baidu.com", "sdfsfddsf", "get");
+        try {
+            Febs.Net.fetch(req).then((res) -> {
+                return res.text();
+            }).then((res) -> {
+                Log.out(tag + res);
+            }).execute().get();
+        } catch (ExecutionException e) {
+            Log.err(tag + e.getMessage());
+        }
+    }
+
     @Test
     public void testText() {
         String tag = "Net text: ";
@@ -78,7 +98,7 @@ public class NetTest {
         }
     }
 
-     @Test
+    @Test
     public void testBlob() {
         String tag = "Net Blob: ";
         Log.out("========================================");
@@ -108,8 +128,7 @@ public class NetTest {
 
             if (!"success".equals(ret)) {
                 Log.err(tag + "return error");
-            }
-            else {
+            } else {
                 Log.out(tag + "success");
             }
         } catch (TimeoutException e) {

@@ -20,7 +20,7 @@ maven config.
 <dependency>
     <groupId>cn.brainpoint</groupId>
     <artifactId>febs</artifactId>
-    <version>0.1.2</version>
+    <version>0.1.3</version>
 </dependency>
 ```
 
